@@ -4,28 +4,27 @@ use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
 pub enum ShipDirection {
-  Up,
-  Down,
-  Left,
-  Right,
-}
-
-enum ShipShape {
   Horizontal,
-  Vertical
+  Vertical,
 }
 
 #[derive(Debug)]
-pub struct ShipCoordinates {
-  start: u8,
-  end: u8,
-  shape:ShipShape
+enum ShipShape {
+  Horizontal,
+  Vertical,
 }
+
 
 #[derive(Debug)]
 pub struct Ship {
   size: u8,
   direction: ShipDirection,
+  point: Point,
+}
+impl Ship{
+  pub fn end_point(&self)->u8{
+   // row|column + size
+  }
 }
 
 #[derive(Debug)]
@@ -76,54 +75,38 @@ impl GameField {
     let allow = self.ships.get(&size).unwrap() > &0;
     if allow == true {
       self.reduce_ships(&size);
-      Some(Ship { size, direction })
+      let quadrant2 = LEN - size;
+      let mut random = thread_rng();
+      let point;
+
+      match direction {
+        ShipDirection::Horizontal => {
+          point = Point {
+            row: random.gen_range(0, LEN),
+            column: random.gen_range(0, quadrant2),
+          };
+        }
+        ShipDirection::Vertical => {
+          point = Point {
+            row: random.gen_range(0, quadrant2),
+            column: random.gen_range(0, LEN),
+          };
+        }
+      }
+      Some(Ship {
+        size,
+        direction,
+        point,
+      })
     } else {
       None
     }
   }
 
   pub fn set_ship(&mut self, ship: Ship) {
-
     let quadrant2 = LEN - ship.size;
-    let quadrant4 = ship.size - 1;
     let mut random = thread_rng();
 
-    match ship.direction {
-      ShipDirection::Up => {
-        let row = random.gen_range(quadrant4, LEN);
-        let point = Point {
-          row,
-          column: random.gen_range(0, LEN),
-          core:row - (ship.size - 1)..row + 1,
-        };
-      }
-         ShipDirection::Left => {
-        let column = random.gen_range(quadrant4, LEN);
-        let point = Point {
-          column,
-          row: random.gen_range(0, LEN),
-          core:column - (ship.size - 1)..column + 1,
-        };
-      }
-      ShipDirection::Right => {
-        let column = random.gen_range(0, quadrant2);
-        let point = Point {
-          row: random.gen_range(0, LEN),
-          column ,
-          core: column..column + ship.size
-        };
-      }
-      ShipDirection::Down => {
-        let row = random.gen_range(0, quadrant2);
-        let point = Point {
-          row,
-          column: random.gen_range(0, LEN),
-          core:row..row + ship.size
-        };
-      }
-   
-      _ => println!("Error"),
-    }
 
     /*
     if ship.direction == ShipDirection::Up {
