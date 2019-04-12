@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 extern crate rand;
 use rand::{thread_rng, Rng};
+
 #[derive(Debug)]
 pub enum ShipDirection {
   Up,
@@ -11,16 +12,22 @@ pub enum ShipDirection {
 
 #[derive(Debug)]
 pub struct Ship {
-  size: usize,
+  size: u8,
   direction: ShipDirection,
 }
 
-const LEN: usize = 10;
+#[derive(Debug)]
+pub struct Point {
+  row: u8,
+  column: u8,
+}
 
-type Field = [[i32; LEN]; LEN];
+const LEN: u8 = 10;
+
+type Field = [[i32; LEN as usize]; LEN as usize];
 pub struct GameField {
- pub field: Field,
- pub ships: HashMap<usize, usize>,
+  pub field: Field,
+  pub ships: HashMap<u8, u8>,
 }
 
 impl GameField {
@@ -47,21 +54,39 @@ impl GameField {
     }
   }
 
-  fn reduce_ships(&mut self, size: &usize) {
+  fn reduce_ships(&mut self, size: &u8) {
     let val = self.ships.get_mut(&size).unwrap();
     *val -= 1;
     println!("Val {}", val);
   }
 
-  fn vector(&self, ship: &Ship) -> bool {
+  fn vector(&self, ship: &Ship, point: Point) -> bool {
     let Ship { direction, size } = ship;
+    let Point { row, column } = point;
+    let vector = vec![0; *size as usize];
+    let mut i: u8 = 0;
+    /**
+     * @todo add forEach https://docs.rs/foreach/0.3.0/foreach/
+     */
 
+    for (index, elem) in vector.iter().enumerate() {
+      let custom_row = row - i;
+
+      // println!("Index, elem, {:?}", self.field[*size as usize]);
+      println!(
+        "Index, elem, {:?} {}",&custom_row,
+        self.field[custom_row as usize][column as usize]
+      );
+      i += 1;
+
+      //   println!("Range {} {:?}",index,elem);
+    }
 
 
     true
 
   }
-  pub fn create_ship(&mut self, size: usize, direction: ShipDirection) -> Option<Ship> {
+  pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
     let allow = self.ships.get(&size).unwrap() > &0;
     if allow == true {
       self.reduce_ships(&size);
@@ -72,8 +97,6 @@ impl GameField {
   }
 
   pub fn set_ship(&mut self, ship: Ship) {
-    println!("SHip direction {:?}", ship.direction);
-    println!("Enum {:?}", ShipDirection::Up);
 
     // let mut rng = rand::random::<usize>();
     //let roll = rng.gen_range(1, 7);
@@ -85,9 +108,12 @@ impl GameField {
     match ship.direction {
       ShipDirection::Up => {
         let min_row_index = quadrant4;
-        let random_row = random.gen_range(min_row_index, LEN);
-        let is_allow = self.vector(&ship);
-        println!("Allow {}", is_allow);
+        let point = Point {
+          row: random.gen_range(min_row_index, LEN),
+          column: random.gen_range(0, LEN),
+        };
+        let is_empty_direction = self.vector(&ship, point);
+        println!("Allow {}, Direction UP", is_empty_direction);
       }
       ShipDirection::Right => {
         let max_column_index = quadrant2;
@@ -113,6 +139,4 @@ impl GameField {
     */
   }
 }
-
-
 
