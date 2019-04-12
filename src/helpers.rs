@@ -10,6 +10,18 @@ pub enum ShipDirection {
   Right,
 }
 
+enum ShipShape {
+  Horizontal,
+  Vertical
+}
+
+#[derive(Debug)]
+pub struct ShipCoordinates {
+  start: u8,
+  end: u8,
+  shape:ShipShape
+}
+
 #[derive(Debug)]
 pub struct Ship {
   size: u8,
@@ -60,32 +72,6 @@ impl GameField {
     println!("Val {}", val);
   }
 
-  fn vector(&self, ship: &Ship, point: Point) -> bool {
-    let Ship { direction, size } = ship;
-    let Point { row, column } = point;
-    let vector = vec![0; *size as usize];
-    let mut i: u8 = 0;
-    /**
-     * @todo add forEach https://docs.rs/foreach/0.3.0/foreach/
-     */
-
-    for (index, elem) in vector.iter().enumerate() {
-      let custom_row = row - i;
-
-      // println!("Index, elem, {:?}", self.field[*size as usize]);
-      println!(
-        "Index, elem, {:?} {}",&custom_row,
-        self.field[custom_row as usize][column as usize]
-      );
-      i += 1;
-
-      //   println!("Range {} {:?}",index,elem);
-    }
-
-
-    true
-
-  }
   pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
     let allow = self.ships.get(&size).unwrap() > &0;
     if allow == true {
@@ -98,35 +84,44 @@ impl GameField {
 
   pub fn set_ship(&mut self, ship: Ship) {
 
-    // let mut rng = rand::random::<usize>();
-    //let roll = rng.gen_range(1, 7);
-
     let quadrant2 = LEN - ship.size;
     let quadrant4 = ship.size - 1;
     let mut random = thread_rng();
 
     match ship.direction {
       ShipDirection::Up => {
-        let min_row_index = quadrant4;
+        let row = random.gen_range(quadrant4, LEN);
         let point = Point {
-          row: random.gen_range(min_row_index, LEN),
+          row,
           column: random.gen_range(0, LEN),
+          core:row - (ship.size - 1)..row + 1,
         };
-        let is_empty_direction = self.vector(&ship, point);
-        println!("Allow {}, Direction UP", is_empty_direction);
+      }
+         ShipDirection::Left => {
+        let column = random.gen_range(quadrant4, LEN);
+        let point = Point {
+          column,
+          row: random.gen_range(0, LEN),
+          core:column - (ship.size - 1)..column + 1,
+        };
       }
       ShipDirection::Right => {
-        let max_column_index = quadrant2;
-        let random_column = random.gen_range(0, max_column_index);
+        let column = random.gen_range(0, quadrant2);
+        let point = Point {
+          row: random.gen_range(0, LEN),
+          column ,
+          core: column..column + ship.size
+        };
       }
       ShipDirection::Down => {
-        let max_row_index = quadrant2;
-        let random_row = random.gen_range(0, max_row_index);
+        let row = random.gen_range(0, quadrant2);
+        let point = Point {
+          row,
+          column: random.gen_range(0, LEN),
+          core:row..row + ship.size
+        };
       }
-      ShipDirection::Left => {
-        let min_column_index = quadrant4;
-        let random_column = random.gen_range(min_column_index, LEN);
-      }
+   
       _ => println!("Error"),
     }
 
