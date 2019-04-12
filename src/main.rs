@@ -9,3 +9,6 @@ fn main() {
   field.set_ship(ship.unwrap());
   //println!("Rev {:?}", ship);
 }
+
+#[cfg(test)]
+mod test;

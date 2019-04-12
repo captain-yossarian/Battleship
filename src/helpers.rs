@@ -1,7 +1,6 @@
-
 use std::collections::HashMap;
 extern crate rand;
-use rand::{Rng,thread_rng};
+use rand::{thread_rng, Rng};
 #[derive(Debug)]
 pub enum ShipDirection {
   Up,
@@ -20,8 +19,8 @@ const LEN: usize = 10;
 
 type Field = [[i32; LEN]; LEN];
 pub struct GameField {
-  field: Field,
-  ships: HashMap<usize, usize>,
+ pub field: Field,
+ pub ships: HashMap<usize, usize>,
 }
 
 impl GameField {
@@ -53,6 +52,15 @@ impl GameField {
     *val -= 1;
     println!("Val {}", val);
   }
+
+  fn vector(&self, ship: &Ship) -> bool {
+    let Ship { direction, size } = ship;
+
+
+
+    true
+
+  }
   pub fn create_ship(&mut self, size: usize, direction: ShipDirection) -> Option<Ship> {
     let allow = self.ships.get(&size).unwrap() > &0;
     if allow == true {
@@ -67,32 +75,31 @@ impl GameField {
     println!("SHip direction {:?}", ship.direction);
     println!("Enum {:?}", ShipDirection::Up);
 
-   // let mut rng = rand::random::<usize>();
+    // let mut rng = rand::random::<usize>();
     //let roll = rng.gen_range(1, 7);
 
     let quadrant2 = LEN - ship.size;
     let quadrant4 = ship.size - 1;
-    match (ship.direction) {   
+    let mut random = thread_rng();
 
-      (ShipDirection::Up) => {
-        let min_row_index = quadrant4;    
-        println!("Random {} {}",min_row_index,thread_rng().gen_range(min_row_index, LEN));
-    
+    match ship.direction {
+      ShipDirection::Up => {
+        let min_row_index = quadrant4;
+        let random_row = random.gen_range(min_row_index, LEN);
+        let is_allow = self.vector(&ship);
+        println!("Allow {}", is_allow);
       }
-      (ShipDirection::Right) => {
+      ShipDirection::Right => {
         let max_column_index = quadrant2;
-        println!("Random {}",thread_rng().gen_range(0, max_column_index));
-
+        let random_column = random.gen_range(0, max_column_index);
       }
-      (ShipDirection::Down) => {
+      ShipDirection::Down => {
         let max_row_index = quadrant2;
-        println!("Random {}",thread_rng().gen_range(0, max_row_index));
-
+        let random_row = random.gen_range(0, max_row_index);
       }
-      (ShipDirection::Left) => {
+      ShipDirection::Left => {
         let min_column_index = quadrant4;
-        println!("Random {}",thread_rng().gen_range(min_column_index, LEN));
-
+        let random_column = random.gen_range(min_column_index, LEN);
       }
       _ => println!("Error"),
     }
@@ -106,3 +113,6 @@ impl GameField {
     */
   }
 }
+
+
+
