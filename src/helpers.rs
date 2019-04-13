@@ -1,7 +1,7 @@
 use std::collections::HashMap;
+use std::ops::Range;
 extern crate rand;
 use rand::{thread_rng, Rng};
-
 #[derive(Debug)]
 pub enum ShipDirection {
   Horizontal,
@@ -20,12 +20,9 @@ pub struct Ship {
   size: u8,
   direction: ShipDirection,
   point: Point,
+
 }
-impl Ship{
-  pub fn end_point(&self)->u8{
-   // row|column + size
-  }
-}
+
 
 #[derive(Debug)]
 pub struct Point {
@@ -35,7 +32,7 @@ pub struct Point {
 
 const LEN: u8 = 10;
 
-type Field = [[i32; LEN as usize]; LEN as usize];
+type Field = [[u8; LEN as usize]; LEN as usize];
 pub struct GameField {
   pub field: Field,
   pub ships: HashMap<u8, u8>,
@@ -71,6 +68,7 @@ impl GameField {
     println!("Val {}", val);
   }
 
+
   pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
     let allow = self.ships.get(&size).unwrap() > &0;
     if allow == true {
@@ -78,21 +76,36 @@ impl GameField {
       let quadrant2 = LEN - size;
       let mut random = thread_rng();
       let point;
+      let dynamic = random.gen_range(0, quadrant2);
+      let stat = random.gen_range(0, LEN);
+
 
       match direction {
         ShipDirection::Horizontal => {
           point = Point {
-            row: random.gen_range(0, LEN),
-            column: random.gen_range(0, quadrant2),
+            row: stat,
+            column: dynamic,
           };
+          for index in dynamic..dynamic + size {
+            self.draw(stat, index);
+          }
+         let result:Vec<u8> = (dynamic..(dynamic + size)).collect();
+         println!("Result {:?}",result);
         }
+
         ShipDirection::Vertical => {
           point = Point {
-            row: random.gen_range(0, quadrant2),
-            column: random.gen_range(0, LEN),
+            row: dynamic,
+            column: stat,
           };
+          for index in dynamic..dynamic + size {
+            self.draw(index, stat);
+          }
         }
+
       }
+
+
       Some(Ship {
         size,
         direction,
@@ -103,18 +116,9 @@ impl GameField {
     }
   }
 
-  pub fn set_ship(&mut self, ship: Ship) {
-    let quadrant2 = LEN - ship.size;
-    let mut random = thread_rng();
-
-
-    /*
-    if ship.direction == ShipDirection::Up {
-      let min_row_index = ship.size - 1;
-          println!("MIn row {:?}", min_row_index);
-
-    }
-    */
+  pub fn draw(&mut self, x: u8, y: u8) {
+    self.field[x as usize][y as usize] = 1;
   }
+
 }
 
