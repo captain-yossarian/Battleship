@@ -73,12 +73,12 @@ impl GameField {
     let allow = self.ships.get(&size).unwrap() > &0;
     if allow == true {
       self.reduce_ships(&size);
-      let quadrant2 = LEN - size;
       let mut random = thread_rng();
-      let point;
+      let quadrant2 = LEN - size;
       let dynamic = random.gen_range(0, quadrant2);
       let stat = random.gen_range(0, LEN);
-
+      let range = dynamic..dynamic + size;
+      let point;
 
       match direction {
         ShipDirection::Horizontal => {
@@ -86,26 +86,21 @@ impl GameField {
             row: stat,
             column: dynamic,
           };
-          for index in dynamic..dynamic + size {
+          for index in range {
             self.draw(stat, index);
           }
-         let result:Vec<u8> = (dynamic..(dynamic + size)).collect();
-         println!("Result {:?}",result);
+          println!("Horizontal point {:?}", point);
         }
-
         ShipDirection::Vertical => {
           point = Point {
             row: dynamic,
             column: stat,
           };
-          for index in dynamic..dynamic + size {
+          for index in range {
             self.draw(index, stat);
           }
         }
-
       }
-
-
       Some(Ship {
         size,
         direction,
@@ -116,8 +111,19 @@ impl GameField {
     }
   }
 
+
   pub fn draw(&mut self, x: u8, y: u8) {
+    if x != 0 {
+      self.field[(x - 1) as usize][y as usize] = 2;
+   
+    }
+   // self.field[x as usize][(y - 1) as usize] = 2;
     self.field[x as usize][y as usize] = 1;
+  //  self.field[x as usize][(y + 1) as usize] = 2;
+
+    if x != 9 {
+      self.field[(x + 1) as usize][y as usize] = 2;
+    }
   }
 
 }
