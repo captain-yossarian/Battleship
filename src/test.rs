@@ -91,7 +91,7 @@ mod test {
             .filter(|el| el.into_iter().any(|v| *v == 2))
             .collect();
             println!("Expect {:?}",expect);
-        let rows_contain_bounds = 3;
+        let rows_contain_bounds = 4;
 
         assert_eq!(expect.len(), rows_contain_bounds);
     }
