@@ -7,5 +7,7 @@ edition = "2018"
 [dependencies]
 rand = "0.6.5"
 
-[dev-dependencies]
-cargo-husky = "1"
+[dev-dependencies.cargo-husky]
+version = "1"
+default-features = false 
+features = ["precommit-hook"]
