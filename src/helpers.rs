@@ -25,7 +25,6 @@ enum Direction {
 struct DrawStep {
   direction: Direction,
   cells: u8,
-  increment: i8,
 }
 
 #[derive(Debug)]
@@ -119,36 +118,44 @@ impl GameField {
       let dynamic = random.gen_range(1, 12 - size);
       let stat = random.gen_range(1, 11);
       let range = dynamic..dynamic + size;
-      let point;
+      let start_point;
 
       match direction {
         ShipDirection::Horizontal => {
-          point = Point {
+          start_point = Point {
             row: stat,
             column: dynamic,
           };
           for index in range {
-            self.draw(stat, index, Status::Ship);
+            let point = Point {
+              row: stat,
+              column: index,
+            };
+            self.draw(&point, Status::Ship);
           }
           let path = self.wrap_ship_horizontal(&size);
-          self.draw_cell(point.clone(), path);
+          self.draw_cell(start_point.clone(), path);
         }
         ShipDirection::Vertical => {
-          point = Point {
+          start_point = Point {
             row: dynamic,
             column: stat,
           };
           for index in range {
-            self.draw(index, stat, Status::Ship);
+            let point = Point {
+              row: index,
+              column: stat,
+            };
+            self.draw(&point, Status::Ship);
           }
           let path = self.wrap_ship_vertical(&size);
-          self.draw_cell(point.clone(), path);
+          self.draw_cell(start_point.clone(), path);
         }
       }
       Some(Ship {
         size,
         direction,
-        point,
+        point: start_point,
       })
     } else {
       None
@@ -161,27 +168,22 @@ impl GameField {
       DrawStep {
         direction: Direction::Left,
         cells: 1,
-        increment: -1,
       },
       DrawStep {
         direction: Direction::Up,
         cells: 1,
-        increment: -1,
       },
       DrawStep {
         direction: Direction::Right,
         cells: long_shot,
-        increment: 1,
       },
       DrawStep {
         direction: Direction::Down,
         cells: 2,
-        increment: 1,
       },
       DrawStep {
         direction: Direction::Left,
         cells: long_shot,
-        increment: -1,
       },
     ]
   }
@@ -194,83 +196,46 @@ impl GameField {
       DrawStep {
         direction: Direction::Up,
         cells: 1,
-        increment: -1,
       },
       DrawStep {
         direction: Direction::Right,
         cells: 1,
-        increment: 1,
       },
       DrawStep {
         direction: Direction::Down,
         cells: long_shot,
-        increment: 1,
       },
       DrawStep {
         direction: Direction::Left,
         cells: 2,
-        increment: -1,
       },
       DrawStep {
         direction: Direction::Up,
         cells: long_shot,
-        increment: -1,
       },
     ]
   }
-  fn drawer(&mut self, mut callback: Box<FnMut() -> u8>) {
-    let result = callback();
-    println!("After {}", result);
-  }
-  fn draw_cell(&mut self, point: Point, path: Vec<DrawStep>) {
-    let Point {
-      mut row,
-      mut column,
-    } = point;
 
+  fn draw_cell(&mut self, mut point: Point, path: Vec<DrawStep>) {
     for step in path {
-      let DrawStep {
-        direction,
-        cells,
-        increment,
-      } = step;
-
-      match direction {
-        Direction::Up => {
-          for _ in 0..cells {
-            row -= 1;
-            self.draw(row, column, Status::Bound);
-          }
+      let DrawStep { direction, cells } = step;
+      for _ in 0..cells {
+        match direction {
+          Direction::Up => point.up(),
+          Direction::Left => point.left(),
+          Direction::Right => point.right(),
+          Direction::Down => point.down(),
         }
-        Direction::Left => {
-          for _ in 0..cells {
-            column -= 1;
-            self.draw(row, column, Status::Bound);
-          }
-        }
-        Direction::Right => {
-          for _ in 0..cells {
-            column += 1;
-            self.draw(row, column, Status::Bound);
-          }
-        }
-        Direction::Down => {
-          for _ in 0..cells {
-            row += 1;
-            self.draw(row, column, Status::Bound);
-          }
-        }
-
+        self.draw(&point, Status::Bound);
       }
     }
-
   }
 
-  pub fn draw(&mut self,point:Point, status: Status) {
-    let Point {
-      row, column
-    } = point;
-    self.field[row as usize][column as usize] = status as u8;
+
+
+  pub fn draw(&mut self, point: &Point, status: Status) {
+    let Point { row, column } = point;
+    self.field[*row as usize][*column as usize] = status as u8;
   }
 }
 
