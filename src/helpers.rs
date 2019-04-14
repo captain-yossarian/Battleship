@@ -31,8 +31,8 @@ struct DrawStep {
 pub struct Ship {
   size: u8,
   direction: ShipDirection,
-  point: Point,
-
+  start_point: Point,
+  end_point: Point,
 }
 
 #[derive(Debug)]
@@ -50,6 +50,10 @@ pub struct Point {
 }
 
 impl Point {
+  pub fn go_to(&mut self, row: u8, column: u8) {
+    self.row = row;
+    self.column = column;
+  }
   pub fn up(&mut self) {
     self.row -= 1;
   }
@@ -68,8 +72,8 @@ impl Point {
 pub const LEN: u8 = 12;
 
 pub struct Coordinates {
-  pub dynamic: u8,
-  pub stat: u8,
+  pub will_change: u8,
+  pub fixed: u8,
   pub range: Range<u8>,
 }
 
@@ -95,8 +99,112 @@ impl GameField {
       ships,
     }
   }
-  pub fn show(&self) {
 
+
+  pub fn reduce_ships(&mut self, size: &u8) {
+    let val = self.ships.get_mut(&size).unwrap();
+    *val -= 1;
+  }
+  pub fn check_permission(&mut self, size: &u8) -> bool {
+    self.ships.get(&size).unwrap() > &0
+  }
+  pub fn random_coordinates(&self, size: &u8) -> Coordinates {
+    let mut random = thread_rng();
+    let will_change = random.gen_range(1, 12 - size);
+    let fixed = random.gen_range(1, 11);
+    let range = will_change..will_change + size;
+    Coordinates {
+      will_change,
+      fixed,
+      range,
+    }
+  }
+
+  pub fn draw_ship(&mut self, size: u8, direction: ShipDirection) -> Ship {
+    let Coordinates {
+      will_change,
+      fixed,
+      range,
+    } = self.random_coordinates(&size);
+
+    let start_point;
+    let mut end_point;
+
+
+    match direction {
+      ShipDirection::Horizontal => {
+        start_point = Point {
+          row: fixed,
+          column: will_change,
+        };
+        end_point = start_point.clone();
+        for _ in range {
+          end_point.right();
+          self.draw_cell(&end_point, Status::Ship);
+        }
+      }
+      ShipDirection::Vertical => {
+        start_point = Point {
+          row: will_change,
+          column: fixed,
+        };
+        end_point = start_point.clone();
+        for _ in range {
+          self.draw_cell(&end_point, Status::Ship);
+          end_point.down();
+        }
+      }
+    }
+    let bounds = self.generate_ship_bounds(&direction, &size);
+    self.draw_ship_bounds(start_point.clone(), bounds);
+    self.reduce_ships(&size);
+
+    Ship {
+      size,
+      direction,
+      start_point,
+      end_point,
+    }
+  }
+
+
+  pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
+    if self.check_permission(&size) == true {
+      Some(self.draw_ship(size, direction))
+    } else {
+      None
+    }
+  }
+
+
+  fn draw_ship_bounds(&mut self, mut point: Point, path: Vec<DrawStep>) {
+    for step in path {
+      let DrawStep { direction, cells } = step;
+      for _ in 0..cells {
+        match direction {
+          Direction::Up => point.up(),
+          Direction::Left => point.left(),
+          Direction::Right => point.right(),
+          Direction::Down => point.down(),
+        }
+        self.draw_cell(&point, Status::Bound);
+      }
+    }
+  }
+
+
+  pub fn draw_cell(&mut self, point: &Point, fixed: Status) {
+    let Point { row, column } = point;
+    let value = self.field[*row as usize][*column as usize];
+
+  
+    if value == Status::Empty as u8 {
+      self.field[*row as usize][*column as usize] = fixed as u8;
+    }
+    
+  }
+
+  pub fn show(&self) {
     let columns = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     println!("col         {:?}", columns);
     println!("            -------------------------------");
@@ -110,86 +218,7 @@ impl GameField {
     }
   }
 
-  pub fn reduce_ships(&mut self, size: &u8) {
-    let val = self.ships.get_mut(&size).unwrap();
-    *val -= 1;
-    println!("Val {}", val);
-  }
-  pub fn create_permission(&mut self, size: &u8) -> bool {
-    let allow = self.ships.get(&size).unwrap() > &0;
-
-    allow
-  }
-  pub fn random_coordinates(&self, size: &u8) -> Coordinates {
-    let mut random = thread_rng();
-    let dynamic = random.gen_range(1, 12 - size);
-    let stat = random.gen_range(1, 11);
-    let range = dynamic..dynamic + size;
-    Coordinates {
-      dynamic,
-      stat,
-      range,
-    }
-  }
-
-
-  pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
-    let allow = self.create_permission(&size);
-    if allow == true {
-      let Coordinates {
-        dynamic,
-        stat,
-        range,
-      } = self.random_coordinates(&size);
-
-      let start_point;
-
-      match direction {
-        ShipDirection::Horizontal => {
-          start_point = Point {
-            row: stat,
-            column: dynamic,
-          };
-          for index in range {
-            let point = Point {
-              row: start_point.row,
-              column: index,
-            };
-            self.draw(&point, Status::Ship);
-          }
-        }
-        ShipDirection::Vertical => {
-          start_point = Point {
-            row: dynamic,
-            column: stat,
-          };
-          for index in range {
-            let point = Point {
-              row: index,
-              column: start_point.column,
-            };
-            self.draw(&point, Status::Ship);
-          }
-
-        }
-      }
-      let path = self.wrap_ship(&direction, &size);
-      self.draw_cell(start_point.clone(), path);
-
-      self.reduce_ships(&size);
-
-
-      Some(Ship {
-        size,
-        direction,
-        point: start_point,
-      })
-    } else {
-      None
-    }
-  }
-
-  fn wrap_ship(&self, direction: &ShipDirection, size: &u8) -> Vec<DrawStep> {
+  fn generate_ship_bounds(&self, direction: &ShipDirection, size: &u8) -> Vec<DrawStep> {
     let long_shot = size + 1;
     match direction {
       ShipDirection::Horizontal => vec![
@@ -237,28 +266,6 @@ impl GameField {
         },
       ],
     }
-  }
-
-
-  fn draw_cell(&mut self, mut point: Point, path: Vec<DrawStep>) {
-    for step in path {
-      let DrawStep { direction, cells } = step;
-      for _ in 0..cells {
-        match direction {
-          Direction::Up => point.up(),
-          Direction::Left => point.left(),
-          Direction::Right => point.right(),
-          Direction::Down => point.down(),
-        }
-        self.draw(&point, Status::Bound);
-      }
-    }
-  }
-
-
-  pub fn draw(&mut self, point: &Point, status: Status) {
-    let Point { row, column } = point;
-    self.field[*row as usize][*column as usize] = status as u8;
   }
 }
 

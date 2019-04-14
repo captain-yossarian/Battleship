@@ -35,17 +35,17 @@ mod test {
         assert_eq!(*field.ships.get(&4).unwrap(), 0);
     }
     #[test]
-    fn create_permission1() {
+    fn fixedcheck_permission1() {
         let mut field = super::GameField::new();
-        let permission = field.create_permission(&4);
+        let permission = field.check_permission(&4);
         assert_eq!(permission, true);
 
     }
     #[test]
-    fn create_permission2() {
+    fn fixedcheck_permission2() {
         let mut field = super::GameField::new();
         field.reduce_ships(&4);
-        let permission = field.create_permission(&4);
+        let permission = field.check_permission(&4);
         assert_eq!(permission, false);
     }
     #[test]
@@ -53,16 +53,16 @@ mod test {
         let field = super::GameField::new();
         let size = 4;
         let Coordinates {
-            dynamic,
-            stat,
+            will_change,
+            fixed,
             range,
         } = field.random_coordinates(&size);
-        let expect_dynamic = dynamic >= 1 && dynamic <= 7;
-        let expect_stat = stat >= 1 && stat <= 10;
+        let expect_will_change = will_change >= 1 && will_change <= 7;
+        let expect_fixed = fixed >= 1 && fixed <= 10;
 
-        assert_eq!(expect_dynamic, true);
-        assert_eq!(expect_stat, true);
-        assert_eq!(range, dynamic..dynamic + size);
+        assert_eq!(expect_will_change, true);
+        assert_eq!(expect_fixed, true);
+        assert_eq!(range, will_change..will_change + size);
     }
 
     #[test]
@@ -70,7 +70,7 @@ mod test {
         let mut field = super::GameField::new();
         let size = 2;
         field.create_ship(size, ShipDirection::Vertical);
-   
+
         let expect: Vec<&[u8; LEN as usize]> = field
             .field
             .iter()
@@ -80,19 +80,31 @@ mod test {
         assert_eq!(expect.len(), size as usize);
     }
     #[test]
-       fn create_ship_2() {
+    fn create_ship_2() {
         let mut field = super::GameField::new();
         let size = 2;
         field.create_ship(size, ShipDirection::Vertical);
-   
+
         let expect: Vec<&[u8; LEN as usize]> = field
             .field
             .iter()
             .filter(|el| el.into_iter().any(|v| *v == 2))
             .collect();
-            println!("Expect {:?}",expect);
-        let rows_contain_bounds = 3;
+        println!("Expect {:?}", expect);
+        let rows_contain_bounds = 4;
 
         assert_eq!(expect.len(), rows_contain_bounds);
+    }
+    #[test]
+    fn create_ship_3() {
+        let mut field = super::GameField::new();
+        let size = 4;
+        field.create_ship(size, ShipDirection::Vertical);
+
+        match field.create_ship(size, ShipDirection::Vertical) {
+            Some(_) => assert_eq!(true, false),
+            None => assert_eq!(true, true),
+        }
+
     }
 }
