@@ -6,4 +6,6 @@ edition = "2018"
 
 [dependencies]
 rand = "0.6.5"
+
+[dev-dependencies]
 cargo-husky = "1"
