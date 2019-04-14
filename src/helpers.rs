@@ -65,13 +65,20 @@ impl Point {
   }
 }
 
-const LEN: u8 = 12;
+pub const LEN: u8 = 12;
+
+pub struct Coordinates {
+  pub dynamic: u8,
+  pub stat: u8,
+  pub range: Range<u8>,
+}
 
 type Field = [[u8; LEN as usize]; LEN as usize];
 pub struct GameField {
   pub field: Field,
   pub ships: HashMap<u8, u8>,
 }
+
 
 impl GameField {
   pub fn new() -> GameField {
@@ -103,21 +110,38 @@ impl GameField {
     }
   }
 
-  fn reduce_ships(&mut self, size: &u8) {
+  pub fn reduce_ships(&mut self, size: &u8) {
     let val = self.ships.get_mut(&size).unwrap();
     *val -= 1;
     println!("Val {}", val);
   }
+  pub fn create_permission(&mut self, size: &u8) -> bool {
+    let allow = self.ships.get(&size).unwrap() > &0;
+
+    allow
+  }
+  pub fn random_coordinates(&self, size: &u8) -> Coordinates {
+    let mut random = thread_rng();
+    let dynamic = random.gen_range(1, 12 - size);
+    let stat = random.gen_range(1, 11);
+    let range = dynamic..dynamic + size;
+    Coordinates {
+      dynamic,
+      stat,
+      range,
+    }
+  }
 
 
   pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
-    let allow = self.ships.get(&size).unwrap() > &0;
+    let allow = self.create_permission(&size);
     if allow == true {
-      self.reduce_ships(&size);
-      let mut random = thread_rng();
-      let dynamic = random.gen_range(1, 12 - size);
-      let stat = random.gen_range(1, 11);
-      let range = dynamic..dynamic + size;
+      let Coordinates {
+        dynamic,
+        stat,
+        range,
+      } = self.random_coordinates(&size);
+
       let start_point;
 
       match direction {
@@ -128,13 +152,11 @@ impl GameField {
           };
           for index in range {
             let point = Point {
-              row: stat,
+              row: start_point.row,
               column: index,
             };
             self.draw(&point, Status::Ship);
           }
-          let path = self.wrap_ship_horizontal(&size);
-          self.draw_cell(start_point.clone(), path);
         }
         ShipDirection::Vertical => {
           start_point = Point {
@@ -144,14 +166,19 @@ impl GameField {
           for index in range {
             let point = Point {
               row: index,
-              column: stat,
+              column: start_point.column,
             };
             self.draw(&point, Status::Ship);
           }
-          let path = self.wrap_ship_vertical(&size);
-          self.draw_cell(start_point.clone(), path);
+
         }
       }
+      let path = self.wrap_ship(&direction, &size);
+      self.draw_cell(start_point.clone(), path);
+
+      self.reduce_ships(&size);
+
+
       Some(Ship {
         size,
         direction,
@@ -162,59 +189,56 @@ impl GameField {
     }
   }
 
-  fn wrap_ship_horizontal(&self, size: &u8) -> Vec<DrawStep> {
+  fn wrap_ship(&self, direction: &ShipDirection, size: &u8) -> Vec<DrawStep> {
     let long_shot = size + 1;
-    vec![
-      DrawStep {
-        direction: Direction::Left,
-        cells: 1,
-      },
-      DrawStep {
-        direction: Direction::Up,
-        cells: 1,
-      },
-      DrawStep {
-        direction: Direction::Right,
-        cells: long_shot,
-      },
-      DrawStep {
-        direction: Direction::Down,
-        cells: 2,
-      },
-      DrawStep {
-        direction: Direction::Left,
-        cells: long_shot,
-      },
-    ]
+    match direction {
+      ShipDirection::Horizontal => vec![
+        DrawStep {
+          direction: Direction::Left,
+          cells: 1,
+        },
+        DrawStep {
+          direction: Direction::Up,
+          cells: 1,
+        },
+        DrawStep {
+          direction: Direction::Right,
+          cells: long_shot,
+        },
+        DrawStep {
+          direction: Direction::Down,
+          cells: 2,
+        },
+        DrawStep {
+          direction: Direction::Left,
+          cells: long_shot,
+        },
+      ],
+      ShipDirection::Vertical => vec![
+        DrawStep {
+          direction: Direction::Up,
+          cells: 1,
+        },
+        DrawStep {
+          direction: Direction::Right,
+          cells: 1,
+        },
+        DrawStep {
+          direction: Direction::Down,
+          cells: long_shot,
+        },
+        DrawStep {
+          direction: Direction::Left,
+          cells: 2,
+        },
+        DrawStep {
+          direction: Direction::Up,
+          cells: long_shot,
+        },
+      ],
+    }
   }
 
-  fn wrap_ship_vertical(&self, size: &u8) -> Vec<DrawStep> {
-    let long_shot = size + 1;
-
-
-    vec![
-      DrawStep {
-        direction: Direction::Up,
-        cells: 1,
-      },
-      DrawStep {
-        direction: Direction::Right,
-        cells: 1,
-      },
-      DrawStep {
-        direction: Direction::Down,
-        cells: long_shot,
-      },
-      DrawStep {
-        direction: Direction::Left,
-        cells: 2,
-      },
-      DrawStep {
-        direction: Direction::Up,
-        cells: long_shot,
-      },
-    ]
-  }
 
   fn draw_cell(&mut self, mut point: Point, path: Vec<DrawStep>) {
     for step in path {
@@ -230,7 +254,6 @@ impl GameField {
       }
     }
   }
-
 
 
   pub fn draw(&mut self, point: &Point, status: Status) {
