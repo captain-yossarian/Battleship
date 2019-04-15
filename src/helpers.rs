@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use rand::{thread_rng, Rng};
-use std::ops::{Range, Sub};
+use std::ops::Range;
 
 #[derive(Debug)]
 pub enum ShipDirection {
@@ -45,8 +45,13 @@ pub enum Status {
 
 #[derive(Debug, Clone)]
 pub struct Point {
-  row: u8,
-  column: u8,
+ pub row: u8,
+ pub column: u8,
+}
+impl PartialEq for Point {
+    fn eq(&self, other: &Point) -> bool {
+        self.row == other.row && self.column == other.column
+    }
 }
 
 impl Point {
@@ -83,7 +88,6 @@ pub struct GameField {
   pub ships: HashMap<u8, u8>,
 }
 
-
 impl GameField {
   pub fn new() -> GameField {
     let mut ships = HashMap::new();
@@ -105,8 +109,34 @@ impl GameField {
     let val = self.ships.get_mut(&size).unwrap();
     *val -= 1;
   }
+
+  pub fn draw_ship(&mut self, size: u8, direction: ShipDirection) -> Ship {
+    let coordinates = self.random_coordinates(&size);
+    let (start_point, end_point) = self.draw_ship_core(&direction, coordinates);
+
+    let bounds = self.generate_ship_bounds(&direction, &size);
+    self.draw_ship_bounds(start_point.clone(), bounds);
+    self.reduce_ships(&size);
+
+    Ship {
+      size,
+      direction,
+      start_point,
+      end_point,
+    }
+  }
+
+
   pub fn check_permission(&mut self, size: &u8) -> bool {
     self.ships.get(&size).unwrap() > &0
+  }
+
+  pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
+    if self.check_permission(&size) == true {
+      Some(self.draw_ship(size, direction))
+    } else {
+      None
+    }
   }
   pub fn random_coordinates(&self, size: &u8) -> Coordinates {
     let mut random = thread_rng();
@@ -119,17 +149,18 @@ impl GameField {
       range,
     }
   }
-
-  pub fn draw_ship(&mut self, size: u8, direction: ShipDirection) -> Ship {
+  pub fn draw_ship_core(
+    &mut self,
+    direction: &ShipDirection,
+    coordinates: Coordinates,
+  ) -> (Point, Point) {
     let Coordinates {
       will_change,
       fixed,
       range,
-    } = self.random_coordinates(&size);
-
+    } = coordinates;
     let start_point;
     let mut end_point;
-
 
     match direction {
       ShipDirection::Horizontal => {
@@ -139,8 +170,8 @@ impl GameField {
         };
         end_point = start_point.clone();
         for _ in range {
-          end_point.right();
           self.draw_cell(&end_point, Status::Ship);
+          end_point.right();
         }
       }
       ShipDirection::Vertical => {
@@ -155,25 +186,7 @@ impl GameField {
         }
       }
     }
-    let bounds = self.generate_ship_bounds(&direction, &size);
-    self.draw_ship_bounds(start_point.clone(), bounds);
-    self.reduce_ships(&size);
-
-    Ship {
-      size,
-      direction,
-      start_point,
-      end_point,
-    }
-  }
-
-
-  pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
-    if self.check_permission(&size) == true {
-      Some(self.draw_ship(size, direction))
-    } else {
-      None
-    }
+    (start_point, end_point)
   }
 
 
@@ -197,11 +210,11 @@ impl GameField {
     let Point { row, column } = point;
     let value = self.field[*row as usize][*column as usize];
 
-  
+
     if value == Status::Empty as u8 {
       self.field[*row as usize][*column as usize] = fixed as u8;
     }
-    
+
   }
 
   pub fn show(&self) {

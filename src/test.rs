@@ -1,10 +1,10 @@
 use super::*;
-use helpers::{Coordinates, ShipDirection, LEN};
+use helpers::{Coordinates, Point, ShipDirection, LEN};
 
 #[cfg(test)]
 mod test {
 
-    use super::{Coordinates, GameField, ShipDirection, LEN};
+    use super::{Coordinates, GameField, Point, ShipDirection, LEN};
 
     #[test]
     fn create_field() {
@@ -35,14 +35,14 @@ mod test {
         assert_eq!(*field.ships.get(&4).unwrap(), 0);
     }
     #[test]
-    fn fixedcheck_permission1() {
+    fn check_permission1() {
         let mut field = super::GameField::new();
         let permission = field.check_permission(&4);
         assert_eq!(permission, true);
 
     }
     #[test]
-    fn fixedcheck_permission2() {
+    fn check_permission2() {
         let mut field = super::GameField::new();
         field.reduce_ships(&4);
         let permission = field.check_permission(&4);
@@ -106,5 +106,52 @@ mod test {
             None => assert_eq!(true, true),
         }
 
+    }
+    #[test]
+    fn draw_ship_core_1() {
+        let mut field = super::GameField::new();
+        let size = 4;
+        let column: u8 = 2;
+        let row: u8 = 3;
+        let range = column..column + size;
+
+        let coordinates = Coordinates {
+            will_change: column,
+            fixed: row,
+            range,
+        };
+        let (start_point, end_point) =
+            field.draw_ship_core(&ShipDirection::Horizontal, coordinates);
+        assert_eq!(start_point, Point { row, column });
+        assert_eq!(
+            end_point,
+            Point {
+                row,
+                column: column + size
+            }
+        );
+    }
+    #[test]
+    fn draw_ship_core_2() {
+        let mut field = super::GameField::new();
+        let size = 2;
+        let column: u8 = 2;
+        let row: u8 = 3;
+        let range = row..row + size;
+
+        let coordinates = Coordinates {
+            will_change: row,
+            fixed: column,
+            range,
+        };
+        let (start_point, end_point) = field.draw_ship_core(&ShipDirection::Vertical, coordinates);
+        assert_eq!(start_point, Point { row, column });
+        assert_eq!(
+            end_point,
+            Point {
+                row: row + size,
+                column
+            }
+        );
     }
 }
