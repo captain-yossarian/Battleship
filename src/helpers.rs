@@ -208,11 +208,10 @@ impl GameField {
 
   pub fn draw_cell(&mut self, point: &Point, fixed: Status) {
     let Point { row, column } = point;
-    let value = self.field[*row as usize][*column as usize];
+    let value = &mut self.field[*row as usize][*column as usize];
 
-
-    if value == Status::Empty as u8 {
-      self.field[*row as usize][*column as usize] = fixed as u8;
+    if *value == Status::Empty as u8 {
+      *value = fixed as u8;
     }
 
   }
