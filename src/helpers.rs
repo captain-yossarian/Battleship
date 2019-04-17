@@ -125,7 +125,7 @@ impl GameField {
     let start_point = self.draw_ship_core(&direction, coordinates, size);
 
     let bounds = self.generate_ship_bounds(&direction, &size);
-    let draw_ship_bounds = self.draw(start_point.clone(), bounds, Status::Bound);
+    self.draw(start_point.clone(), bounds, Status::Bound);
     self.reduce_ships(&size);
 
     Ship {
@@ -150,7 +150,6 @@ impl GameField {
     let Coordinates { will_change, fixed } = coordinates;
     let start_point;
     let mut begin_draw_point;
-    let mut success: Option<bool>;
 
 
     match direction {
@@ -165,7 +164,7 @@ impl GameField {
         }];
         begin_draw_point = start_point.clone();
         begin_draw_point.left();
-        success = self.draw(begin_draw_point, path, Status::Ship);
+        self.draw(begin_draw_point, path, Status::Ship);
       }
       ShipDirection::Vertical => {
         start_point = Point {
@@ -179,12 +178,12 @@ impl GameField {
 
         begin_draw_point = start_point.clone();
         begin_draw_point.up();
-        success = self.draw(begin_draw_point, path, Status::Ship);
+        self.draw(begin_draw_point, path, Status::Ship);
       }
     }
-
     start_point
   }
+
 
 
   fn draw(&mut self, mut point: Point, path: Vec<DrawStep>, status: Status) -> Option<bool> {
@@ -198,15 +197,16 @@ impl GameField {
           Direction::Right => point.right(),
           Direction::Down => point.down(),
         }
+
+        success = if self.draw_cell(&point, &status).is_some() {
+          true
+        } else {
+          false
+        }
       }
 
     }
-    if self.draw_cell(&point, &status).is_some() {
-      Some(success)
-    } else {
-      None
-    }
-
+    Some(success)
   }
 
 
