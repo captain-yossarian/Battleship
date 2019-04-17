@@ -1,5 +1,5 @@
 use super::*;
-use helpers::{Coordinates, Point, ShipDirection, LEN};
+use battleship::{Coordinates, Point, ShipDirection, LEN};
 
 #[cfg(test)]
 mod test {
@@ -35,14 +35,14 @@ mod test {
         assert_eq!(*field.ships.get(&4).unwrap(), 0);
     }
     #[test]
-    fn check_permission1() {
+    fn check_permission_positive() {
         let mut field = super::GameField::new();
         let permission = field.check_permission(&4);
         assert_eq!(permission, true);
 
     }
     #[test]
-    fn check_permission2() {
+    fn check_permission_negative() {
         let mut field = super::GameField::new();
         field.reduce_ships(&4);
         let permission = field.check_permission(&4);
@@ -64,7 +64,7 @@ mod test {
     }
 
     #[test]
-    fn create_ship_1() {
+    fn ship_core_length() {
         let mut field = super::GameField::new();
         let size = 2;
         field.create_ship(size, ShipDirection::Vertical);
@@ -78,7 +78,7 @@ mod test {
         assert_eq!(expect.len(), size as usize);
     }
     #[test]
-    fn create_ship_2() {
+    fn chip_bounds_quantity() {
         let mut field = super::GameField::new();
         let size = 2;
         field.create_ship(size, ShipDirection::Vertical);
@@ -94,7 +94,7 @@ mod test {
         assert_eq!(expect.len(), rows_contain_bounds);
     }
     #[test]
-    fn create_ship_3() {
+    fn create_ship() {
         let mut field = super::GameField::new();
         let size = 4;
         field.create_ship(size, ShipDirection::Vertical);
@@ -106,12 +106,11 @@ mod test {
 
     }
     #[test]
-    fn draw_ship_core_1() {
+    fn create_start_point_horizontal() {
         let mut field = super::GameField::new();
         let size = 4;
         let column: u8 = 2;
         let row: u8 = 3;
-        let range = column..column + size;
 
         let coordinates = Coordinates {
             will_change: column,
@@ -123,7 +122,7 @@ mod test {
  
     }
     #[test]
-    fn draw_ship_core_2() {
+    fn create_start_point_vertical() {
         let mut field = super::GameField::new();
         let size = 2;
         let column: u8 = 2;

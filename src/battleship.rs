@@ -13,10 +13,10 @@ pub enum ShipDirection {
 
 #[derive(Debug)]
 enum Direction {
-  Up,
-  Right,
-  Down,
-  Left,
+  Up(u8),
+  Right(u8),
+  Down(u8),
+  Left(u8),
 }
 
 #[derive(Debug)]
@@ -123,7 +123,7 @@ impl GameField {
   pub fn draw_ship(&mut self, size: u8, direction: ShipDirection) -> Ship {
     let coordinates = self.random_coordinates(&size);
     let start_point = self.draw_ship_core(&direction, coordinates, size);
-
+println!("Start point {:?}",start_point);
     let bounds = self.generate_ship_bounds(&direction, &size);
     self.draw(start_point.clone(), bounds, Status::Bound);
     self.reduce_ships(&size);
@@ -158,10 +158,7 @@ impl GameField {
           row: fixed,
           column: will_change,
         };
-        let path = vec![DrawStep {
-          direction: Direction::Right,
-          cells: size,
-        }];
+        let path = vec![Direction::Right(size)];
         begin_draw_point = start_point.clone();
         begin_draw_point.left();
         self.draw(begin_draw_point, path, Status::Ship);
@@ -171,10 +168,7 @@ impl GameField {
           row: will_change,
           column: fixed,
         };
-        let path = vec![DrawStep {
-          direction: Direction::Down,
-          cells: size,
-        }];
+        let path = vec![Direction::Down(size)];
 
         begin_draw_point = start_point.clone();
         begin_draw_point.up();
@@ -183,19 +177,21 @@ impl GameField {
     }
     start_point
   }
+pub fn iterator<F>(&mut self,len:u8,mut callback:F) 
+where F : FnMut(){
+   for _ in 0..len {
+     callback()
+   }
+}
 
-
-
-  fn draw(&mut self, mut point: Point, path: Vec<DrawStep>, status: Status) -> Option<bool> {
+  fn draw(&mut self, mut point: Point, path: Vec<Direction>, status: Status) -> Option<bool> {
     let mut success: bool = false;
-    for step in path {
-      let DrawStep { direction, cells } = step;
-      for _ in 0..cells {
+    for direction in path {
         match direction {
-          Direction::Up => point.up(),
-          Direction::Left => point.left(),
-          Direction::Right => point.right(),
-          Direction::Down => point.down(),
+          Direction::Up(len) =>self.iterator(len,||point.up()),
+          Direction::Left(len) => self.iterator(len,||point.left()),
+          Direction::Right(len) => self.iterator(len,||point.right()),
+          Direction::Down(len) => self.iterator(len,||point.down()),
         }
 
         success = if self.draw_cell(&point, &status).is_some() {
@@ -203,7 +199,7 @@ impl GameField {
         } else {
           false
         }
-      }
+      
 
     }
     Some(success)
@@ -241,52 +237,22 @@ impl GameField {
     }
   }
 
-  fn generate_ship_bounds(&self, direction: &ShipDirection, size: &u8) -> Vec<DrawStep> {
+  fn generate_ship_bounds(&self, direction: &ShipDirection, size: &u8) -> Vec<Direction> {
     let long_shot = size + 1;
     match direction {
       ShipDirection::Horizontal => vec![
-        DrawStep {
-          direction: Direction::Left,
-          cells: 1,
-        },
-        DrawStep {
-          direction: Direction::Up,
-          cells: 1,
-        },
-        DrawStep {
-          direction: Direction::Right,
-          cells: long_shot,
-        },
-        DrawStep {
-          direction: Direction::Down,
-          cells: 2,
-        },
-        DrawStep {
-          direction: Direction::Left,
-          cells: long_shot,
-        },
+        Direction::Left(1),
+        Direction::Up(1),
+        Direction::Right(long_shot),
+        Direction::Down(2),
+        Direction::Left(long_shot),
       ],
       ShipDirection::Vertical => vec![
-        DrawStep {
-          direction: Direction::Up,
-          cells: 1,
-        },
-        DrawStep {
-          direction: Direction::Right,
-          cells: 1,
-        },
-        DrawStep {
-          direction: Direction::Down,
-          cells: long_shot,
-        },
-        DrawStep {
-          direction: Direction::Left,
-          cells: 2,
-        },
-        DrawStep {
-          direction: Direction::Up,
-          cells: long_shot,
-        },
+        Direction::Up(1),
+        Direction::Right(1),
+        Direction::Down(long_shot),
+        Direction::Left(2),
+        Direction::Up(long_shot),
       ],
     }
   }
