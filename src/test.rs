@@ -55,14 +55,12 @@ mod test {
         let Coordinates {
             will_change,
             fixed,
-            range,
         } = field.random_coordinates(&size);
         let expect_will_change = will_change >= 1 && will_change <= 7;
         let expect_fixed = fixed >= 1 && fixed <= 10;
 
         assert_eq!(expect_will_change, true);
         assert_eq!(expect_fixed, true);
-        assert_eq!(range, will_change..will_change + size);
     }
 
     #[test]
@@ -118,18 +116,11 @@ mod test {
         let coordinates = Coordinates {
             will_change: column,
             fixed: row,
-            range,
         };
-        let (start_point, end_point) =
-            field.draw_ship_core(&ShipDirection::Horizontal, coordinates);
+        let start_point =
+            field.draw_ship_core(&ShipDirection::Horizontal, coordinates, size);
         assert_eq!(start_point, Point { row, column });
-        assert_eq!(
-            end_point,
-            Point {
-                row,
-                column: column + size
-            }
-        );
+ 
     }
     #[test]
     fn draw_ship_core_2() {
@@ -137,21 +128,13 @@ mod test {
         let size = 2;
         let column: u8 = 2;
         let row: u8 = 3;
-        let range = row..row + size;
 
         let coordinates = Coordinates {
             will_change: row,
             fixed: column,
-            range,
         };
-        let (start_point, end_point) = field.draw_ship_core(&ShipDirection::Vertical, coordinates);
+        let start_point= field.draw_ship_core(&ShipDirection::Vertical, coordinates, size);
         assert_eq!(start_point, Point { row, column });
-        assert_eq!(
-            end_point,
-            Point {
-                row: row + size,
-                column
-            }
-        );
+
     }
 }
