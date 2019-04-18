@@ -51,25 +51,39 @@ impl PartialEq for Point {
   }
 }
 
+pub fn forEach<F>(len: u8, mut callback: F)
+where
+  F: FnMut(),
+{
+  for _ in 0..len {
+    callback()
+  }
+}
+
 impl Point {
-  pub fn go_to(&mut self, row: u8, column: u8) {
+  fn go_to(&mut self, row: u8, column: u8) {
     self.row = row;
     self.column = column;
   }
-  pub fn up(&mut self) {
+
+  fn up(&mut self) {
     self.row -= 1;
   }
 
-  pub fn right(&mut self) {
+  fn right(&mut self) {
     self.column += 1;
+
   }
-  pub fn down(&mut self) {
+  fn down(&mut self) {
     self.row += 1;
+
   }
-  pub fn left(&mut self) {
+  fn left(&mut self) {
     self.column -= 1;
+
   }
 }
+
 
 pub const LEN: u8 = 12;
 
@@ -123,9 +137,10 @@ impl GameField {
   pub fn draw_ship(&mut self, size: u8, direction: ShipDirection) -> Ship {
     let coordinates = self.random_coordinates(&size);
     let start_point = self.draw_ship_core(&direction, coordinates, size);
-println!("Start point {:?}",start_point);
+    println!("Start point {:?}", start_point);
     let bounds = self.generate_ship_bounds(&direction, &size);
-    self.draw(start_point.clone(), bounds, Status::Bound);
+    let clone_point = start_point.clone();
+    self.draw(clone_point, bounds, Status::Bound);
     self.reduce_ships(&size);
 
     Ship {
@@ -149,9 +164,6 @@ println!("Start point {:?}",start_point);
   ) -> Point {
     let Coordinates { will_change, fixed } = coordinates;
     let start_point;
-    let mut begin_draw_point;
-
-
     match direction {
       ShipDirection::Horizontal => {
         start_point = Point {
@@ -159,9 +171,9 @@ println!("Start point {:?}",start_point);
           column: will_change,
         };
         let path = vec![Direction::Right(size)];
-        begin_draw_point = start_point.clone();
-        begin_draw_point.left();
-        self.draw(begin_draw_point, path, Status::Ship);
+        let mut clone_point = start_point.clone();
+        clone_point.left();
+        self.draw(clone_point, path, Status::Ship);
       }
       ShipDirection::Vertical => {
         start_point = Point {
@@ -169,40 +181,46 @@ println!("Start point {:?}",start_point);
           column: fixed,
         };
         let path = vec![Direction::Down(size)];
-
-        begin_draw_point = start_point.clone();
-        begin_draw_point.up();
-        self.draw(begin_draw_point, path, Status::Ship);
+        let mut clone_point = start_point.clone();
+        clone_point.up();
+        self.draw(clone_point, path, Status::Ship);
       }
     }
     start_point
   }
-pub fn iterator<F>(&mut self,len:u8,mut callback:F) 
-where F : FnMut(){
-   for _ in 0..len {
-     callback()
-   }
-}
+
 
   fn draw(&mut self, mut point: Point, path: Vec<Direction>, status: Status) -> Option<bool> {
-    let mut success: bool = false;
+    //  let mut success: bool = false;
+    let point = &mut point;
     for direction in path {
-        match direction {
-          Direction::Up(len) =>self.iterator(len,||point.up()),
-          Direction::Left(len) => self.iterator(len,||point.left()),
-          Direction::Right(len) => self.iterator(len,||point.right()),
-          Direction::Down(len) => self.iterator(len,||point.down()),
-        }
-
-        success = if self.draw_cell(&point, &status).is_some() {
-          true
-        } else {
-          false
-        }
-      
-
+      match direction {
+        Direction::Up(len) => forEach(len, || {
+          point.up();
+          self.draw_cell(&point, &status);
+        }),
+        Direction::Left(len) => forEach(len, || {
+          point.left();
+          self.draw_cell(&point, &status);
+        }),
+        Direction::Right(len) => forEach(len, || {
+          point.right();
+          self.draw_cell(&point, &status);
+        }),
+        Direction::Down(len) => forEach(len, || {
+          point.down();
+          self.draw_cell(&point, &status);
+        }),
+      }
+      /*
+            success = if self.draw_cell(&point, &status).is_some() {
+              true
+            } else {
+              false
+            }
+      */
     }
-    Some(success)
+    Some(true)
   }
 
 
@@ -213,7 +231,10 @@ where F : FnMut(){
     if success == true {
       match status {
         Status::Empty => *value = 0,
-        Status::Ship => *value = 1,
+        Status::Ship => {
+          println!("Draw ship SHIP status");
+          *value = 1
+        }
         Status::Bound => *value = 2,
         Status::Kill => *value = 3,
       }
