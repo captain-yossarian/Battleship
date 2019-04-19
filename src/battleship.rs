@@ -13,10 +13,10 @@ pub enum ShipDirection {
 
 #[derive(Debug)]
 enum Direction {
-  Up(u8),
-  Right(u8),
-  Down(u8),
-  Left(u8),
+  Up,
+  Right,
+  Down,
+  Left,
 }
 
 #[derive(Debug)]
@@ -51,19 +51,34 @@ impl PartialEq for Point {
   }
 }
 
-pub fn forEach<F>(len: u8, mut callback: F)
+pub fn for_each<F>(len: u8, mut callback: F)
 where
   F: FnMut(),
 {
+  let range: Vec<u8> = (0..len).collect();
+  let mut iterator = range.iter().fuse();
+
   for _ in 0..len {
-    callback()
+    match iterator.next() {
+      Some(val) => {
+        println!("Val {}", val);
+        callback();
+      }
+      None => println!("Fail"),
+    }
   }
+
 }
 
 impl Point {
-  fn go_to(&mut self, row: u8, column: u8) {
-    self.row = row;
-    self.column = column;
+  fn go_to(&mut self, direction: &Direction) -> &mut Self {
+    match direction {
+      Direction::Up => self.row -= 1,
+      Direction::Left => self.column -= 1,
+      Direction::Right => self.column += 1,
+      Direction::Down => self.row += 1,
+    }
+    self
   }
 
   fn up(&mut self) {
@@ -137,7 +152,6 @@ impl GameField {
   pub fn draw_ship(&mut self, size: u8, direction: ShipDirection) -> Ship {
     let coordinates = self.random_coordinates(&size);
     let start_point = self.draw_ship_core(&direction, coordinates, size);
-    println!("Start point {:?}", start_point);
     let bounds = self.generate_ship_bounds(&direction, &size);
     let clone_point = start_point.clone();
     self.draw(clone_point, bounds, Status::Bound);
@@ -170,7 +184,7 @@ impl GameField {
           row: fixed,
           column: will_change,
         };
-        let path = vec![Direction::Right(size)];
+        let path = vec![(Direction::Right, size)];
         let mut clone_point = start_point.clone();
         clone_point.left();
         self.draw(clone_point, path, Status::Ship);
@@ -180,7 +194,7 @@ impl GameField {
           row: will_change,
           column: fixed,
         };
-        let path = vec![Direction::Down(size)];
+        let path = vec![(Direction::Down, size)];
         let mut clone_point = start_point.clone();
         clone_point.up();
         self.draw(clone_point, path, Status::Ship);
@@ -189,37 +203,12 @@ impl GameField {
     start_point
   }
 
-
-  fn draw(&mut self, mut point: Point, path: Vec<Direction>, status: Status) -> Option<bool> {
-    //  let mut success: bool = false;
-    let point = &mut point;
-    for direction in path {
-      match direction {
-        Direction::Up(len) => forEach(len, || {
-          point.up();
-          self.draw_cell(&point, &status);
-        }),
-        Direction::Left(len) => forEach(len, || {
-          point.left();
-          self.draw_cell(&point, &status);
-        }),
-        Direction::Right(len) => forEach(len, || {
-          point.right();
-          self.draw_cell(&point, &status);
-        }),
-        Direction::Down(len) => forEach(len, || {
-          point.down();
-          self.draw_cell(&point, &status);
-        }),
-      }
-      /*
-            success = if self.draw_cell(&point, &status).is_some() {
-              true
-            } else {
-              false
-            }
-      */
-    }
+  fn draw(&mut self, mut point: Point, path: Vec<(Direction, u8)>, status: Status) -> Option<bool> {
+    path.iter().for_each(|(direction, steps)| {
+      (0..*steps).collect::<Vec<u8>>().iter().for_each(|_| {
+        self.draw_cell(point.go_to(direction), &status);
+      })
+    });
     Some(true)
   }
 
@@ -258,22 +247,22 @@ impl GameField {
     }
   }
 
-  fn generate_ship_bounds(&self, direction: &ShipDirection, size: &u8) -> Vec<Direction> {
+  fn generate_ship_bounds(&self, direction: &ShipDirection, size: &u8) -> Vec<(Direction, u8)> {
     let long_shot = size + 1;
     match direction {
       ShipDirection::Horizontal => vec![
-        Direction::Left(1),
-        Direction::Up(1),
-        Direction::Right(long_shot),
-        Direction::Down(2),
-        Direction::Left(long_shot),
+        (Direction::Left, 1),
+        (Direction::Up, 1),
+        (Direction::Right, long_shot),
+        (Direction::Down, 2),
+        (Direction::Left, long_shot),
       ],
       ShipDirection::Vertical => vec![
-        Direction::Up(1),
-        Direction::Right(1),
-        Direction::Down(long_shot),
-        Direction::Left(2),
-        Direction::Up(long_shot),
+        (Direction::Up, 1),
+        (Direction::Right, 1),
+        (Direction::Down, long_shot),
+        (Direction::Left, 2),
+        (Direction::Up, long_shot),
       ],
     }
   }
