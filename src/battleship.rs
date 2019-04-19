@@ -152,9 +152,9 @@ impl GameField {
   pub fn draw_ship(&mut self, size: u8, direction: ShipDirection) -> Ship {
     let coordinates = self.random_coordinates(&size);
     let start_point = self.draw_ship_core(&direction, coordinates, size);
-    let bounds = self.generate_ship_bounds(&direction, &size);
+    let bounds_path = self.generate_ship_bounds(&direction, &size);
     let clone_point = start_point.clone();
-    self.draw(clone_point, bounds, Status::Bound);
+    self.draw_by_path(clone_point, bounds_path, Status::Bound);
     self.reduce_ships(&size);
 
     Ship {
@@ -187,7 +187,7 @@ impl GameField {
         let path = vec![(Direction::Right, size)];
         let mut clone_point = start_point.clone();
         clone_point.left();
-        self.draw(clone_point, path, Status::Ship);
+        self.draw_by_path(clone_point, path, Status::Ship);
       }
       ShipDirection::Vertical => {
         start_point = Point {
@@ -197,17 +197,22 @@ impl GameField {
         let path = vec![(Direction::Down, size)];
         let mut clone_point = start_point.clone();
         clone_point.up();
-        self.draw(clone_point, path, Status::Ship);
+        self.draw_by_path(clone_point, path, Status::Ship);
       }
     }
     start_point
   }
 
-  fn draw(&mut self, mut point: Point, path: Vec<(Direction, u8)>, status: Status) -> Option<bool> {
+  fn draw_by_path(
+    &mut self,
+    mut point: Point,
+    path: Vec<(Direction, u8)>,
+    status: Status,
+  ) -> Option<bool> {
     path.iter().for_each(|(direction, steps)| {
       (0..*steps).collect::<Vec<u8>>().iter().for_each(|_| {
         self.draw_cell(point.go_to(direction), &status);
-      })
+      });
     });
     Some(true)
   }
@@ -216,15 +221,14 @@ impl GameField {
   pub fn draw_cell(&mut self, point: &Point, status: &Status) -> Option<()> {
     let Point { row, column } = point;
     let value = &mut self.field[*row as usize][*column as usize];
-    let success = *value == 0 || *value == 2;
-    if success == true {
+    let allow = *value == Status::Empty as u8 || *value == Status::Bound as u8;
+    if allow == true {
       match status {
-        Status::Empty => *value = 0,
-        Status::Ship => {
-          println!("Draw ship SHIP status");
-          *value = 1
+        Status::Empty => {         
+          *value = 0
         }
-        Status::Bound => *value = 2,
+        Status::Ship => *value = 1,
+        Status::Bound =>  *value = 2,
         Status::Kill => *value = 3,
       }
       Some(())
