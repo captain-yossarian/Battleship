@@ -12,7 +12,7 @@ pub enum ShipDirection {
 }
 
 #[derive(Debug)]
-enum Direction {
+pub enum Direction {
   Up,
   Right,
   Down,
@@ -28,7 +28,7 @@ struct DrawStep {
 #[derive(Debug)]
 pub struct Ship {
   size: u8,
-  direction: ShipDirection,
+  direction: &'static ShipDirection,
   start_point: Point,
 }
 
@@ -51,24 +51,6 @@ impl PartialEq for Point {
   }
 }
 
-pub fn for_each<F>(len: u8, mut callback: F)
-where
-  F: FnMut(),
-{
-  let range: Vec<u8> = (0..len).collect();
-  let mut iterator = range.iter().fuse();
-
-  for _ in 0..len {
-    match iterator.next() {
-      Some(val) => {
-        println!("Val {}", val);
-        callback();
-      }
-      None => println!("Fail"),
-    }
-  }
-
-}
 
 impl Point {
   fn go_to(&mut self, direction: &Direction) -> &mut Self {
@@ -80,32 +62,11 @@ impl Point {
     }
     self
   }
-
-  fn up(&mut self) {
-    self.row -= 1;
-  }
-
-  fn right(&mut self) {
-    self.column += 1;
-
-  }
-  fn down(&mut self) {
-    self.row += 1;
-
-  }
-  fn left(&mut self) {
-    self.column -= 1;
-
-  }
 }
 
 
 pub const LEN: u8 = 12;
 
-pub struct Coordinates {
-  pub will_change: u8,
-  pub fixed: u8,
-}
 
 type Field = [[u8; LEN as usize]; LEN as usize];
 pub struct GameField {
@@ -138,9 +99,14 @@ impl GameField {
   }
 
 
-  pub fn create_ship(&mut self, size: u8, direction: ShipDirection) -> Option<Ship> {
+  pub fn create_ship(&mut self, size: u8, direction: &'static ShipDirection) -> Option<Ship> {
     if self.check_permission(&size) == true {
-      Some(self.draw_ship(size, direction))
+      let mut draw=self.draw_ship(size, direction);
+      while draw.is_none(){
+        draw=self.draw_ship(size, direction);
+      
+      }  
+      draw
     } else {
       None
     }
@@ -148,59 +114,107 @@ impl GameField {
   pub fn check_permission(&mut self, size: &u8) -> bool {
     self.ships.get(&size).unwrap() > &0
   }
-
-  pub fn draw_ship(&mut self, size: u8, direction: ShipDirection) -> Ship {
-    let coordinates = self.random_coordinates(&size);
-    let start_point = self.draw_ship_core(&direction, coordinates, size);
-    let bounds_path = self.generate_ship_bounds(&direction, &size);
-    let clone_point = start_point.clone();
-    self.draw_by_path(clone_point, bounds_path, Status::Bound);
-    self.reduce_ships(&size);
-
-    Ship {
-      size,
-      direction,
-      start_point,
+  pub fn draw_ship_bounds(
+    &mut self,
+    direction: &ShipDirection,
+    size: u8,
+    point: Point,
+  ) -> Option<()> {
+    let bounds_path = self.generate_ship_bounds(direction, &size);
+    let allow = self.scanner(&bounds_path, point.clone(), Status::Bound);
+    if allow == true {
+      self.draw_by_path(point, bounds_path, Status::Bound);
+      Some(())
+    } else {
+      None
     }
+
+  }
+ 
+  pub fn draw_ship(&mut self, size: u8, direction: &'static ShipDirection) -> Option<Ship> {
+    let start_point = self.generate_random_point(&size, direction);
+    let clone_point = start_point.clone();
+    let clone_point_2 = start_point.clone();
+
+    let drawed_ship = self.draw_ship_core(direction, clone_point, size);
+
+    let drawed_bounds = self.draw_ship_bounds(direction, size, clone_point_2);
+    match (drawed_ship, drawed_bounds) {
+      (Some(()), Some(())) => {
+        println!("Accept {:?} {:?}",drawed_ship,drawed_bounds);
+        self.reduce_ships(&size);
+        Some(Ship {
+          size,
+          direction,
+          start_point,
+        })
+      }
+      _ => {
+        None
+      }
+    }
+
+  }
+  pub fn get_cell_value(&self, point: &Point) -> u8 {
+    let Point { row, column } = point;
+    self.field[*row as usize][*column as usize]
+  }
+  pub fn scanner(&self, path: &Vec<(Direction, u8)>, mut point: Point, allow_status:Status) -> bool {
+    let mut allow = false;
+    let allowed_status = allow_status as u8;
+    for step in path {
+      let (direction, steps) = step;
+      for _ in 0..*steps {
+        let value = self.get_cell_value(point.go_to(&direction));
+        allow = value == Status::Empty as u8 || value == allowed_status;
+        println!("Value {}", value);
+        if allow == false {
+          return allow;
+        }
+      }
+    }
+    allow
   }
 
-  pub fn random_coordinates(&self, size: &u8) -> Coordinates {
+  pub fn generate_random_point(&self, size: &u8, direction: &ShipDirection) -> Point {
     let mut random = thread_rng();
     let will_change = random.gen_range(1, 12 - size);
     let fixed = random.gen_range(1, 11);
-    Coordinates { will_change, fixed }
+    match direction {
+      ShipDirection::Horizontal => Point {
+        row: fixed,
+        column: will_change,
+      },
+      ShipDirection::Vertical => Point {
+        row: will_change,
+        column: fixed,
+      },
+    }
   }
   pub fn draw_ship_core(
     &mut self,
     direction: &ShipDirection,
-    coordinates: Coordinates,
+    mut start_point: Point,
     size: u8,
-  ) -> Point {
-    let Coordinates { will_change, fixed } = coordinates;
-    let start_point;
+  ) -> Option<()> {
+    let path: Vec<(Direction, u8)>;
     match direction {
       ShipDirection::Horizontal => {
-        start_point = Point {
-          row: fixed,
-          column: will_change,
-        };
-        let path = vec![(Direction::Right, size)];
-        let mut clone_point = start_point.clone();
-        clone_point.left();
-        self.draw_by_path(clone_point, path, Status::Ship);
+        path = vec![(Direction::Right, size)];
+        start_point.go_to(&Direction::Left);
       }
       ShipDirection::Vertical => {
-        start_point = Point {
-          row: will_change,
-          column: fixed,
-        };
-        let path = vec![(Direction::Down, size)];
-        let mut clone_point = start_point.clone();
-        clone_point.up();
-        self.draw_by_path(clone_point, path, Status::Ship);
+        path = vec![(Direction::Down, size)];
+        start_point.go_to(&Direction::Up);
       }
     }
-    start_point
+    let allow = self.scanner(&path, start_point.clone(), Status::Empty);
+    if allow == true {
+      self.draw_by_path(start_point, path, Status::Ship);
+      Some(())
+    } else {
+      None
+    }
   }
 
   fn draw_by_path(
@@ -224,11 +238,9 @@ impl GameField {
     let allow = *value == Status::Empty as u8 || *value == Status::Bound as u8;
     if allow == true {
       match status {
-        Status::Empty => {         
-          *value = 0
-        }
+        Status::Empty => *value = 0,
         Status::Ship => *value = 1,
-        Status::Bound =>  *value = 2,
+        Status::Bound => *value = 2,
         Status::Kill => *value = 3,
       }
       Some(())
@@ -250,24 +262,31 @@ impl GameField {
       }
     }
   }
+  //      let allow_2 = self.scanner(&bounds_path, clone);
 
   fn generate_ship_bounds(&self, direction: &ShipDirection, size: &u8) -> Vec<(Direction, u8)> {
     let long_shot = size + 1;
     match direction {
-      ShipDirection::Horizontal => vec![
-        (Direction::Left, 1),
-        (Direction::Up, 1),
-        (Direction::Right, long_shot),
-        (Direction::Down, 2),
-        (Direction::Left, long_shot),
-      ],
-      ShipDirection::Vertical => vec![
-        (Direction::Up, 1),
-        (Direction::Right, 1),
-        (Direction::Down, long_shot),
-        (Direction::Left, 2),
-        (Direction::Up, long_shot),
-      ],
+      ShipDirection::Horizontal => {
+        let path = vec![
+          (Direction::Left, 1),
+          (Direction::Up, 1),
+          (Direction::Right, long_shot),
+          (Direction::Down, 2),
+          (Direction::Left, long_shot),
+        ];
+        path
+      }
+      ShipDirection::Vertical => {
+        let path = vec![
+          (Direction::Up, 1),
+          (Direction::Right, 1),
+          (Direction::Down, long_shot),
+          (Direction::Left, 2),
+          (Direction::Up, long_shot),
+        ];
+        path
+      }
     }
   }
 }
