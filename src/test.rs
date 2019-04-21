@@ -1,22 +1,33 @@
 use super::*;
-use battleship::{Coordinates, Point, ShipDirection, LEN};
+use battleship::{Direction, Point, ShipDirection, Status, LEN};
 
 #[cfg(test)]
 mod test {
 
-    use super::{Coordinates, GameField, Point, ShipDirection, LEN};
+    use super::{Direction, GameField, Point, ShipDirection, Status, LEN};
+
+    fn point_sum(field: GameField, status: Status) -> u8 {
+        field.field.iter().fold(0, |acc, array| {
+            acc + array.iter().fold(0, |a, value| {
+                if *value == status {
+                    a + *value as u8
+                } else {
+                    a + 0
+                }
+            })
+        })
+    }
 
     #[test]
     fn create_field() {
         let GameField { field, .. } = super::GameField::new();
-        assert_eq!(field, [[0; 12]; 12]);
+        assert_eq!(field, [[Status::Empty; 12]; 12]);
     }
     #[test]
     fn get_ships() {
         let GameField { ships, .. } = super::GameField::new();
         let arr = [1, 2, 3, 4];
         let length = arr.len();
-        println!("Ships {:?}", ships);
         for (i, &elem) in arr.iter().enumerate() {
             let index = length - (1 + i);
             let to_be = &arr[index];
@@ -49,91 +60,104 @@ mod test {
         assert_eq!(permission, false);
     }
     #[test]
-    fn random_coordinates() {
+    fn random_point() {
         let field = super::GameField::new();
-        let size = 4;
-        let Coordinates {
-            will_change,
-            fixed,
-        } = field.random_coordinates(&size);
-        let expect_will_change = will_change >= 1 && will_change <= 7;
-        let expect_fixed = fixed >= 1 && fixed <= 10;
+        for size in 1..5 {
+            for _ in 0..100 {
+                let Point { row, column } =
+                    field.generate_random_point(&size, &ShipDirection::Vertical);
 
-        assert_eq!(expect_will_change, true);
-        assert_eq!(expect_fixed, true);
-    }
+                let expect_row = row >= 1 && row <= (12 - size) - 1;
+                let expect_column = column >= 1 && column <= 10;
 
-    #[test]
-    fn ship_core_length() {
-        let mut field = super::GameField::new();
-        let size = 2;
-        field.create_ship(size, ShipDirection::Vertical);
-
-        let expect: Vec<&[u8; LEN as usize]> = field
-            .field
-            .iter()
-            .filter(|el| el.into_iter().any(|v| *v == 1))
-            .collect();
-
-        assert_eq!(expect.len(), size as usize);
-    }
-    #[test]
-    fn chip_bounds_quantity() {
-        let mut field = super::GameField::new();
-        let size = 2;
-        field.create_ship(size, ShipDirection::Vertical);
-
-        let expect: Vec<&[u8; LEN as usize]> = field
-            .field
-            .iter()
-            .filter(|el| el.into_iter().any(|v| *v == 2))
-            .collect();
-        println!("Expect {:?}", expect);
-        let rows_contain_bounds = 4;
-
-        assert_eq!(expect.len(), rows_contain_bounds);
-    }
-    #[test]
-    fn create_ship() {
-        let mut field = super::GameField::new();
-        let size = 4;
-        field.create_ship(size, ShipDirection::Vertical);
-
-        match field.create_ship(size, ShipDirection::Vertical) {
-            Some(_) => assert_eq!(true, false),
-            None => assert_eq!(true, true),
+                assert_eq!(expect_row, true);
+                assert_eq!(expect_column, true);
+            }
         }
-
     }
     #[test]
-    fn create_start_point_horizontal() {
+    fn scan_for() {
         let mut field = super::GameField::new();
         let size = 4;
-        let column: u8 = 2;
-        let row: u8 = 3;
-
-        let coordinates = Coordinates {
-            will_change: column,
-            fixed: row,
-        };
-        let start_point =
-            field.draw_ship_core(&ShipDirection::Horizontal, coordinates, size);
-        assert_eq!(start_point, Point { row, column });
- 
+        let point = Point { row: 5, column: 6 };
+        field.create_ship(size, &ShipDirection::Vertical, Some(point));
+        {
+            let path = vec![(Direction::Down, 1)];
+            assert_eq!(
+                field.scan_for(&path, point, vec![Status::Empty, Status::Bound]),
+                false
+            );
+        }
+        {
+            let path = vec![(Direction::Down, 1)];
+            let point = Point { row: 5, column: 8 };
+            assert_eq!(field.scan_for(&path, point, vec![Status::Empty]), true);
+        }
+        {
+            let path = vec![(Direction::Down, 1)];
+            let point = Point { row: 8, column: 6 };
+            assert_eq!(field.scan_for(&path, point, vec![Status::Bound]), true);
+        }
+        {
+            let path = vec![(Direction::Down, 1)];
+            let point = Point { row: 9, column: 6 };
+            assert_eq!(field.scan_for(&path, point, vec![Status::Empty]), true);
+        }
     }
     #[test]
-    fn create_start_point_vertical() {
+    fn draw_cell() {
         let mut field = super::GameField::new();
-        let size = 2;
-        let column: u8 = 2;
-        let row: u8 = 3;
+        let points: Vec<(Point, Status)> = vec![
+            (Point { row: 5, column: 5 }, Status::Ship),
+            (Point { row: 8, column: 9 }, Status::Bound),
+            (Point { row: 2, column: 4 }, Status::Empty),
+            (Point { row: 4, column: 1 }, Status::Kill),
+        ];
+        points.iter().for_each(|(point, status)| {
+            field.draw_cell(point, status);
+            let cell = field.get_cell_value(&point);
+            assert_eq!(cell, *status);
+        })
 
-        let coordinates = Coordinates {
-            will_change: row,
-            fixed: column,
-        };
-        let start_point= field.draw_ship_core(&ShipDirection::Vertical, coordinates, size);
-        assert_eq!(start_point, Point { row, column });
+    }
+    #[test]
+    fn draw_by_path() {
+        let mut field = super::GameField::new();
+        let path = vec![
+            (Direction::Right, 1),
+            (Direction::Right, 1),
+            (Direction::Down, 1),
+        ];
+        let point = Point { row: 7, column: 6 };
+        field.draw_by_path(point, path, Status::Bound);
+        let sum = point_sum(field, Status::Bound);
+        assert_eq!(sum / 2, 3)
+    }
+    #[test]
+    fn draw_ship_core() {
+        let mut field = super::GameField::new();
+        let size = 4;
+        let result = field.draw_ship_core(
+            &ShipDirection::Horizontal,
+            Point { row: 3, column: 5 },
+            size,
+        );
+        let sum = point_sum(field, Status::Ship);
+        assert_eq!(sum, size);
+        assert_eq!(result, Some(()));
+    }
 
+    #[test]
+
+    fn draw_ship_bounds() {
+        let mut field = super::GameField::new();
+        let size = 4;
+        field.draw_ship_bounds(
+            &ShipDirection::Horizontal,
+            size,
+            Point { row: 5, column: 5 },
+        );
+        let sum = point_sum(field, Status::Bound);
+        assert_eq!(sum / 2, 14)
     }
 }
