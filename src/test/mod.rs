@@ -1,20 +1,18 @@
 use super::*;
-use battleship::{Direction, Point, ShipDirection, Status, LEN};
+use field::{status_u8, Direction, Point, ShipDirection, Status, LEN,Draw};
 
 #[cfg(test)]
 mod test {
 
-    use super::{Direction, GameField, Point, ShipDirection, Status, LEN};
+    use super::{status_u8, Direction, GameField, Point, ShipDirection, Status, LEN,Draw};
 
     fn point_sum(field: GameField, status: Status) -> u8 {
-        field.field.iter().fold(0, |acc, array| {
-            acc + array.iter().fold(0, |a, value| {
-                if *value == status {
-                    a + *value as u8
-                } else {
-                    a + 0
-                }
-            })
+        field.field.iter().flatten().fold(0, |acc, elem| {
+            if *elem == status {
+                acc + status_u8(*elem)
+            } else {
+                acc
+            }
         })
     }
 
@@ -121,6 +119,14 @@ mod test {
 
     }
     #[test]
+    fn get_cell_value() {
+        let mut field = super::GameField::new();
+        let point = Point { row: 1, column: 1 };
+        field.draw_cell(&point, &Status::Bound);
+        let cell_value = field.get_cell_value(&point);
+        assert_eq!(cell_value, Status::Bound);
+    }
+    #[test]
     fn draw_by_path() {
         let mut field = super::GameField::new();
         let path = vec![
@@ -129,7 +135,13 @@ mod test {
             (Direction::Down, 1),
         ];
         let point = Point { row: 7, column: 6 };
-        field.draw_by_path(point, path, Status::Bound);
+     
+        field.draw_by_path( Draw {
+        start_point:point,
+        path,
+        draw_status:Status::Bound,
+        allowed_status:vec![Status::Empty,Status::Bound]
+      });
         let sum = point_sum(field, Status::Bound);
         assert_eq!(sum / 2, 3)
     }
@@ -152,12 +164,22 @@ mod test {
     fn draw_ship_bounds() {
         let mut field = super::GameField::new();
         let size = 4;
+        let bound_quantity = 14;
         field.draw_ship_bounds(
             &ShipDirection::Horizontal,
             size,
             Point { row: 5, column: 5 },
         );
         let sum = point_sum(field, Status::Bound);
-        assert_eq!(sum / 2, 14)
+        assert_eq!(sum / 2, bound_quantity)
+    }
+    #[test]
+    fn generate_ship_bounds() {
+        let field = super::GameField::new();
+        let size = 3;
+        let bounds_path_horizontal = field.generate_ship_bounds(&ShipDirection::Horizontal, &size);
+        let bounds_path_vertical = field.generate_ship_bounds(&ShipDirection::Vertical, &size);
+        assert_eq!(bounds_path_horizontal.len(), 5);
+        assert_eq!(bounds_path_vertical.len(), 5)
     }
 }

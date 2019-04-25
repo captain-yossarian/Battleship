@@ -1,8 +1,7 @@
 
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
-use std::ops::Range;
-use std::thread;
+use std::time::Instant;
 
 
 #[derive(Debug)]
@@ -34,6 +33,12 @@ pub enum Status {
   Kill,
 }
 
+pub struct Draw {
+  pub start_point: Point,
+  pub path: Vec<(Direction, u8)>,
+  pub draw_status: Status,
+  pub allowed_status: Vec<Status>,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct Point {
@@ -46,7 +51,10 @@ impl PartialEq for Point {
   }
 }
 
-
+/**
+ * @todo
+ * convert argument [size,direction,point] to Ship structure
+ */
 impl Point {
   fn go_to(&mut self, direction: &Direction) -> &mut Self {
     match direction {
@@ -57,30 +65,24 @@ impl Point {
     }
     self
   }
-  fn random(&mut self, direction: &ShipDirection, size: u8) -> Self {
-    let mut random = thread_rng();
-    let will_change = random.gen_range(1, 12 - size);
-    let fixed = random.gen_range(1, 11);
-    match direction {
-      ShipDirection::Horizontal => Point {
-        row: fixed,
-        column: will_change,
-      },
-      ShipDirection::Vertical => Point {
-        row: will_change,
-        column: fixed,
-      },
-    }
-  }
 }
 
 
 pub const LEN: u8 = 12;
+pub fn status_u8(status: Status) -> u8 {
+  match status {
+    Status::Empty => 0,
+    Status::Ship => 1,
+    Status::Bound => 2,
+    Status::Kill => 3,
+  }
+
+}
 pub fn convert_tu_u8(elem: &[Status; 12]) -> Vec<u8> {
   elem
     .to_vec()
     .into_iter()
-    .map(|elem: Status| elem as u8)
+    .map(status_u8)
     .collect::<Vec<u8>>()
 }
 
@@ -120,6 +122,7 @@ impl GameField {
     direction: &'static ShipDirection,
     point: Option<Point>,
   ) -> Option<Ship> {
+
     if self.check_permission(&size) == true {
       let mut draw = None;
       let mut start_point: Point;
@@ -145,14 +148,13 @@ impl GameField {
     point: Point,
   ) -> Option<()> {
     let bounds_path = self.generate_ship_bounds(direction, &size);
-    let allow = self.scan_for(&bounds_path, point, vec![Status::Bound, Status::Empty]);
-    if allow == true {
-      self.draw_by_path(point, bounds_path, Status::Bound);
-      Some(())
-    } else {
-      None
-    }
 
+    self.draw_by_path(Draw {
+      start_point: point,
+      path: bounds_path,
+      draw_status: Status::Bound,
+      allowed_status: vec![Status::Bound, Status::Empty],
+    })
   }
 
   pub fn draw_ship(
@@ -161,11 +163,16 @@ impl GameField {
     direction: &'static ShipDirection,
     start_point: Point,
   ) -> Option<Ship> {
+    let start = Instant::now();
     let drawed_ship = self.draw_ship_core(direction, start_point, size);
     let drawed_bounds = self.draw_ship_bounds(direction, size, start_point);
+
     match (drawed_ship, drawed_bounds) {
       (Some(()), Some(())) => {
         self.reduce_ships(&size);
+        let end = Instant::now();
+        let diff = end.duration_since(start);
+        println!("Time diff {:?}", diff);
         Some(Ship {
           size,
           direction,
@@ -234,39 +241,39 @@ impl GameField {
         start_point.go_to(&Direction::Up);
       }
     }
-    let allow = self.scan_for(&path, start_point, vec![Status::Empty]);
-    if allow == true {
-      self.draw_by_path(start_point, path, Status::Ship);
+
+    self.draw_by_path(Draw {
+      start_point,
+      path,
+      draw_status: Status::Ship,
+      allowed_status: vec![Status::Empty],
+    })
+  }
+
+  pub fn draw_by_path(&mut self, draw: Draw) -> Option<()> {
+    let Draw {
+      mut start_point,
+      path,
+      draw_status,
+      allowed_status,
+    } = draw;
+
+    if self.scan_for(&path, start_point, allowed_status) == true {
+      path.iter().for_each(|(direction, steps)| {
+        (0..*steps).collect::<Vec<u8>>().iter().for_each(|_| {
+          self.draw_cell(start_point.go_to(direction), &draw_status);
+        });
+      });
       Some(())
     } else {
       None
     }
   }
 
-  pub fn draw_by_path(
-    &mut self,
-    mut point: Point,
-    path: Vec<(Direction, u8)>,
-    status: Status,
-  ) -> Option<bool> {
-    path.iter().for_each(|(direction, steps)| {
-      (0..*steps).collect::<Vec<u8>>().iter().for_each(|_| {
-        self.draw_cell(point.go_to(direction), &status);
-      });
-    });
-    Some(true)
-  }
-
 
   pub fn draw_cell(&mut self, point: &Point, status: &Status) {
     let Point { row, column } = point;
-    let value = &mut self.field[*row as usize][*column as usize];
-    match status {
-      Status::Empty => *value = Status::Empty,
-      Status::Ship => *value = Status::Ship,
-      Status::Bound => *value = Status::Bound,
-      Status::Kill => *value = Status::Kill,
-    }
+    self.field[*row as usize][*column as usize] = *status;
   }
 
 
@@ -283,9 +290,8 @@ impl GameField {
       }
     }
   }
-  //      let allow_2 = self.scan_for(&bounds_path, clone);
 
-  fn generate_ship_bounds(&self, direction: &ShipDirection, size: &u8) -> Vec<(Direction, u8)> {
+  pub fn generate_ship_bounds(&self, direction: &ShipDirection, size: &u8) -> Vec<(Direction, u8)> {
     let long_shot = size + 1;
     match direction {
       ShipDirection::Horizontal => {

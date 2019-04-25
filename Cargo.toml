@@ -6,7 +6,6 @@ edition = "2018"
 
 [dependencies]
 rand = "0.6.5"
-azul = { git = "https://github.com/maps4print/azul" }
 
 [dev-dependencies.cargo-husky]
 version = "1"
