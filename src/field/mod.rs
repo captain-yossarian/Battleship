@@ -90,6 +90,7 @@ type Field = [[Status; LEN as usize]; LEN as usize];
 pub struct GameField {
   pub field: Field,
   pub ships: HashMap<u8, u8>,
+  pub num:i32,
 }
 
 impl GameField {
@@ -106,6 +107,7 @@ impl GameField {
     GameField {
       field: [[Status::Empty; 12]; 12],
       ships,
+      num:99
     }
 
   }

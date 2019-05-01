@@ -1,7 +1,7 @@
-// extern crate ;
 mod field;
 mod game;
 use field::{GameField, Point, ShipDirection};
+
 
 
 fn main() {
@@ -14,7 +14,7 @@ fn main() {
     &ShipDirection::Vertical,
     Some(Point { row: 5, column: 6 }),
   );
-  
+
   /*
       4,
       &ShipDirection::Vertical,

@@ -1,8 +1,17 @@
 [package]
-name = "hello-rust"
+name = "battleship"
 version = "0.1.0"
 authors = ["Serhjii Bilyk <sergiybiluk@gmail.com>"]
 edition = "2018"
+
+
+[lib]
+name = "battleship"
+path = "src/lib.rs"
+
+[[bin]]
+name = "battleship"
+doc = false
 
 [dependencies]
 rand = "0.6.5"
