@@ -1,8 +1,11 @@
 
+use crate::utils;
 use rand::{thread_rng, Rng};
-use std::collections::HashMap;
-use std::time::Instant;
 
+use std::collections::HashMap;
+use utils::generate_all_empty_points;
+
+//use super::utils::{convert_tu_u8,status_u8};
 
 #[derive(Debug)]
 pub enum ShipDirection {
@@ -25,6 +28,7 @@ pub struct Ship {
   direction: &'static ShipDirection,
   start_point: Point,
 }
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Status {
   Empty,
@@ -32,7 +36,7 @@ pub enum Status {
   Bound,
   Kill,
 }
-
+type RandomNumber = fn(u8, u8) -> u8;
 pub struct Draw {
   pub start_point: Point,
   pub path: Vec<(Direction, u8)>,
@@ -69,6 +73,7 @@ impl Point {
 
 
 pub const LEN: u8 = 12;
+
 pub fn status_u8(status: Status) -> u8 {
   match status {
     Status::Empty => 0,
@@ -86,30 +91,55 @@ pub fn convert_tu_u8(elem: &[Status; 12]) -> Vec<u8> {
     .collect::<Vec<u8>>()
 }
 
-type Field = [[Status; LEN as usize]; LEN as usize];
+
+pub type Field = [[Status; LEN as usize]; LEN as usize];
 pub struct GameField {
   pub field: Field,
   pub ships: HashMap<u8, u8>,
-  pub num:i32,
 }
 
 impl GameField {
 
   pub fn new() -> GameField {
     let mut ships = HashMap::new();
-    let keys = [1, 2, 3, 4];
+    let keys: [u8; 4] = [1, 2, 3, 4];
     let mut values = keys.iter().rev();
 
     for &key in keys.iter() {
       ships.insert(key, *values.next().unwrap());
     }
+    let field = [[Status::Empty; 12]; 12];
 
-    GameField {
-      field: [[Status::Empty; 12]; 12],
-      ships,
-      num:99
-    }
+    GameField { field, ships }
+  }
 
+  pub fn generate_random_field(&mut self, callback: RandomNumber) {
+    let ships = self.ships.clone();
+    let queue = [4, 3, 2, 1];
+    queue.iter().for_each(|key| match ships.get(key) {
+      Some(val) => (1..*val + 1).collect::<Vec<u8>>().iter().for_each(|_| {
+        self.create_ship(*key, &ShipDirection::Vertical, None, callback);
+      }),
+      None => (),
+    });
+  }
+  pub fn generate_random_point(
+    &mut self,
+    direction: &ShipDirection,
+    size: u8,
+    callback: RandomNumber,
+  ) -> Point {
+    let empty_points = generate_all_empty_points(self.field);
+    let allowed_points = empty_points
+      .iter()
+      .filter(|point| match direction {
+        ShipDirection::Horizontal => point.column < 12 - size,
+        ShipDirection::Vertical => point.row < 12 - size,
+      })
+      .map(|elem| *elem)
+      .collect::<Vec<Point>>();
+    let point_index = callback(0, allowed_points.len() as u8); // random.gen_range(0, allowed_points.len());
+    allowed_points[point_index as usize]
   }
 
 
@@ -123,15 +153,32 @@ impl GameField {
     size: u8,
     direction: &'static ShipDirection,
     point: Option<Point>,
+    callback: RandomNumber,
   ) -> Option<Ship> {
-
-    if self.check_permission(&size) == true {
+    if self.check_permission(&size) {
       let mut draw = None;
       let mut start_point: Point;
+      let mut random_points: Vec<Point> = vec![];
+
       while draw.is_none() {
         match point {
           Some(value) => start_point = value,
-          None => start_point = self.generate_random_point(&size, &direction),
+          None => {
+            start_point = {
+              let mut temp_point;
+              loop {
+                temp_point = self.generate_random_point(&direction, size, callback);
+                match random_points.iter().find(|point| **point == temp_point) {                
+                  None => {
+                    random_points.push(temp_point);
+                    break;
+                  },
+                  _=>()
+                }
+              }
+              temp_point
+            }
+          }
         }
         draw = self.draw_ship(size, direction, start_point);
       }
@@ -140,6 +187,8 @@ impl GameField {
       None
     }
   }
+
+
   pub fn check_permission(&mut self, size: &u8) -> bool {
     self.ships.get(&size).unwrap() > &0
   }
@@ -165,16 +214,12 @@ impl GameField {
     direction: &'static ShipDirection,
     start_point: Point,
   ) -> Option<Ship> {
-    let start = Instant::now();
     let drawed_ship = self.draw_ship_core(direction, start_point, size);
     let drawed_bounds = self.draw_ship_bounds(direction, size, start_point);
 
     match (drawed_ship, drawed_bounds) {
       (Some(()), Some(())) => {
         self.reduce_ships(&size);
-        let end = Instant::now();
-        let diff = end.duration_since(start);
-        println!("Time diff {:?}", diff);
         Some(Ship {
           size,
           direction,
@@ -211,21 +256,6 @@ impl GameField {
   }
 
 
-  pub fn generate_random_point(&self, size: &u8, direction: &ShipDirection) -> Point {
-    let mut random = thread_rng();
-    let will_change = random.gen_range(1, 12 - size);
-    let fixed = random.gen_range(1, 11);
-    match direction {
-      ShipDirection::Horizontal => Point {
-        row: fixed,
-        column: will_change,
-      },
-      ShipDirection::Vertical => Point {
-        row: will_change,
-        column: fixed,
-      },
-    }
-  }
   pub fn draw_ship_core(
     &mut self,
     direction: &ShipDirection,

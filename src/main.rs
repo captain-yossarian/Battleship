@@ -1,73 +1,39 @@
+
 mod field;
 mod game;
+mod utils;
+
 use field::{GameField, Point, ShipDirection};
+use rand::{thread_rng, Rng};
+use utils::random_number;
 
-
+struct Foo {
+  start: u8,
+  end: u8,
+}
+impl Iterator for Foo {
+  type Item = u8;
+  fn next(&mut self) -> Option<u8> {
+    if self.start >= self.end {
+      return None;
+    }
+    let result = Some(self.start);
+    self.start += 2;
+    result
+  }
+}
 
 fn main() {
   //use https://github.com/PistonDevelopers/piston
 
   let mut field = GameField::new();
+  let foo = Foo {start:10,end:20};
+  for i in foo {
+    println!("ELEM {}",i);
+  }
 
-  field.create_ship(
-    4,
-    &ShipDirection::Vertical,
-    Some(Point { row: 5, column: 6 }),
-  );
-
-  /*
-      4,
-      &ShipDirection::Vertical,
-      None,
-    );
-      field.create_ship(
-      3,
-      &ShipDirection::Vertical,
-      None,
-    );
-    field.create_ship(
-      3,
-      &ShipDirection::Vertical,
-      None,
-    );
-
-    field.create_ship(
-      2,
-      &ShipDirection::Vertical,
-      None,
-    );
-    field.create_ship(
-      2,
-      &ShipDirection::Vertical,
-      None,
-    );
-    field.create_ship(
-      2,
-      &ShipDirection::Vertical,
-      None,
-    );
-
-      field.create_ship(
-      1,
-      &ShipDirection::Vertical,
-      None,
-    );
-      1,
-      &ShipDirection::Vertical,
-      None,
-    );
-    field.create_ship(
-      1,
-      &ShipDirection::Vertical,
-      None,
-    );
-     field.create_ship(
-      1,
-      &ShipDirection::Vertical,
-      None,
-    );
-  */
-  field.show();
+  field.generate_random_field(random_number);
+ field.show();
 }
 
 #[cfg(test)]

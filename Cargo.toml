@@ -16,6 +16,7 @@ doc = false
 [dependencies]
 rand = "0.6.5"
 
+
 [dev-dependencies.cargo-husky]
 version = "1"
 default-features = false 

@@ -1,10 +1,18 @@
 use super::*;
-use field::{status_u8, Direction, Point, ShipDirection, Status, LEN,Draw};
+use field::{status_u8, Direction, Draw, Point, ShipDirection, Status};
 
+use std::time::{Duration, SystemTime};
+use utils::{generate_all_empty_points, random_number};
 #[cfg(test)]
 mod test {
 
-    use super::{status_u8, Direction, GameField, Point, ShipDirection, Status, LEN,Draw};
+    use super::{
+        generate_all_empty_points, random_number, status_u8, Direction, Draw, GameField, Point,
+        ShipDirection, Status,
+    };
+    use std::time::{Duration, SystemTime};
+    const ALL_SHIPS: u8 = 20;
+
 
     fn point_sum(field: GameField, status: Status) -> u8 {
         field.field.iter().flatten().fold(0, |acc, elem| {
@@ -48,7 +56,6 @@ mod test {
         let mut field = super::GameField::new();
         let permission = field.check_permission(&4);
         assert_eq!(permission, true);
-
     }
     #[test]
     fn check_permission_negative() {
@@ -58,12 +65,106 @@ mod test {
         assert_eq!(permission, false);
     }
     #[test]
+    fn test_generate_all_empty_points() {
+        {
+            let mut field = super::GameField::new();
+            let size = 4;
+            field.create_ship(
+                size,
+                &ShipDirection::Vertical,
+                Some(Point { row: 5, column: 6 }),
+                random_number,
+            );
+            let empty_points = generate_all_empty_points(field.field);
+            println!("EMpty points {}", empty_points.len());
+            field.show();
+            assert_eq!(empty_points.len(), 82);
+        }
+        {
+            let mut field = super::GameField::new();
+            let size = 1;
+            field.create_ship(
+                size,
+                &ShipDirection::Vertical,
+                Some(Point { row: 5, column: 6 }),
+                random_number,
+            );
+            let empty_points = generate_all_empty_points(field.field);
+            println!("EMpty points {}", empty_points.len());
+            field.show();
+            assert_eq!(empty_points.len(), 91);
+        }
+        {
+            let mut field = super::GameField::new();
+            field.create_ship(
+                4,
+                &ShipDirection::Vertical,
+                Some(Point { row: 5, column: 6 }),
+                random_number,
+            );
+            field.create_ship(
+                3,
+                &ShipDirection::Vertical,
+                Some(Point { row: 2, column: 8 }),
+                random_number,
+            );
+            let empty_points = generate_all_empty_points(field.field);
+            println!("EMpty points {}", empty_points.len());
+            field.show();
+            assert_eq!(empty_points.len(), 69);
+        }
+        {
+            let mut field = super::GameField::new();
+            field.create_ship(
+                4,
+                &ShipDirection::Vertical,
+                Some(Point { row: 2, column: 1 }),
+                random_number,
+            );
+            field.create_ship(
+                3,
+                &ShipDirection::Vertical,
+                Some(Point { row: 2, column: 3 }),
+                random_number,
+            );
+            field.create_ship(
+                3,
+                &ShipDirection::Vertical,
+                Some(Point { row: 2, column: 5 }),
+                random_number,
+            );
+            let empty_points = generate_all_empty_points(field.field);
+            println!("EMpty points {}", empty_points.len());
+            field.show();
+            assert_eq!(empty_points.len(), 68);
+        }
+
+    }
+    #[test]
+    fn generate_random_field() {
+        let start = SystemTime::now();
+        (0..2000).collect::<Vec<u16>>().iter().for_each(|_| {
+            let mut field = super::GameField::new();
+            field.generate_random_field(random_number);
+            let sum = point_sum(field, Status::Ship);
+            assert_eq!(sum, ALL_SHIPS);
+        });
+
+        let end = SystemTime::now();
+        let test_time = end
+            .duration_since(start)
+            .expect("SystemTime::duration_since failed");
+        let two_seconds = Duration::new(2, 0);
+        println!("Average {:?}",test_time/2000);
+        assert_eq!(test_time < two_seconds, true);
+    }
+    #[test]
     fn random_point() {
-        let field = super::GameField::new();
+        let mut field = super::GameField::new();
         for size in 1..5 {
             for _ in 0..100 {
                 let Point { row, column } =
-                    field.generate_random_point(&size, &ShipDirection::Vertical);
+                    field.generate_random_point(&ShipDirection::Vertical, size, random_number);
 
                 let expect_row = row >= 1 && row <= (12 - size) - 1;
                 let expect_column = column >= 1 && column <= 10;
@@ -78,7 +179,7 @@ mod test {
         let mut field = super::GameField::new();
         let size = 4;
         let point = Point { row: 5, column: 6 };
-        field.create_ship(size, &ShipDirection::Vertical, Some(point));
+        field.create_ship(size, &ShipDirection::Vertical, Some(point), random_number);
         {
             let path = vec![(Direction::Down, 1)];
             assert_eq!(
@@ -135,13 +236,13 @@ mod test {
             (Direction::Down, 1),
         ];
         let point = Point { row: 7, column: 6 };
-     
-        field.draw_by_path( Draw {
-        start_point:point,
-        path,
-        draw_status:Status::Bound,
-        allowed_status:vec![Status::Empty,Status::Bound]
-      });
+
+        field.draw_by_path(Draw {
+            start_point: point,
+            path,
+            draw_status: Status::Bound,
+            allowed_status: vec![Status::Empty, Status::Bound],
+        });
         let sum = point_sum(field, Status::Bound);
         assert_eq!(sum / 2, 3)
     }
