@@ -3,7 +3,7 @@ mod field;
 mod game;
 mod utils;
 
-use field::{GameField, Point, ShipDirection};
+use field::{GameField, Move, Point, ShipDirection};
 use rand::{thread_rng, Rng};
 use utils::random_number;
 
@@ -27,13 +27,22 @@ fn main() {
   //use https://github.com/PistonDevelopers/piston
 
   let mut field = GameField::new();
-  let foo = Foo {start:10,end:20};
-  for i in foo {
-    println!("ELEM {}",i);
+  let size = 4;
+  field.create_ship(
+    size,
+    &ShipDirection::Vertical,
+    Some(Point { row: 5, column: 6 }),
+    random_number,
+  );
+  let point = Point { row: 5, column: 6 };
+  let result = field.player_move(point);
+  match result {
+    Move::Kill(p) => println!("Kill {:?}", p),
+    Move::Miss(p) => println!("Miss {:?}", p),
   }
 
-  field.generate_random_field(random_number);
- field.show();
+  // field.generate_random_field(random_number);
+  field.show();
 }
 
 #[cfg(test)]
