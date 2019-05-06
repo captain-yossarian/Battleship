@@ -26,13 +26,12 @@ impl Iterator for Foo {
 fn main() {
   //use https://github.com/PistonDevelopers/piston
 
-  let mut field = GameField::new();
+  let mut field = GameField::new(random_number);
   let size = 4;
   field.create_ship(
     size,
     &ShipDirection::Vertical,
-    Some(Point { row: 5, column: 6 }),
-    random_number,
+    Some(Point { row: 5, column: 6 })
   );
   let point = Point { row: 5, column: 6 };
   let result = field.player_move(point);

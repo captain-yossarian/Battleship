@@ -15,15 +15,14 @@ pub fn generate_all_empty_points(field: Field) -> Vec<Point> {
       row[1..11]
         .iter()
         .enumerate()
-        .for_each(|(column_index, value)| match value {
-          Status::Empty => {
+        .for_each(|(column_index, value)| {
+          if let Status::Empty = value {
             let point = Point {
               row: (row_index as u8) + 1,
               column: (column_index as u8) + 1,
             };
             vec.push(point);
           }
-          _ => (),
         })
     });
   vec
