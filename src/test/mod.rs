@@ -1,5 +1,5 @@
 use super::*;
-use field::{status_u8, Direction, Draw, Point, ShipDirection, Status, Ship};
+use field::{status_u8, Direction, Draw, Point, Ship, ShipDirection, Status};
 
 use std::time::{Duration, SystemTime};
 use utils::{generate_all_empty_points, random_number};
@@ -137,7 +137,6 @@ fn generate_random_field() {
         assert_eq!(sum, ALL_SHIPS);
     }
 
-
     let end = SystemTime::now();
     let test_time = end
         .duration_since(start)
@@ -151,8 +150,7 @@ fn random_point() {
     let mut field = super::GameField::new(random_number);
     for size in 1..5 {
         for _ in 0..100 {
-            let Point { row, column } =
-                field.generate_random_point(&ShipDirection::Vertical, size);
+            let Point { row, column } = field.generate_random_point(&ShipDirection::Vertical, size);
 
             let expect_row = row >= 1 && row < (12 - size);
             let expect_column = column >= 1 && column <= 10;
@@ -174,7 +172,6 @@ fn scan_for() {
             field.scan_for(&path, point, vec![Status::Empty, Status::Bound]),
             false
         );
-
     }
     {
         let path = vec![(Direction::Down, 1)];
@@ -239,10 +236,24 @@ fn draw_ship_core() {
     let mut field = super::GameField::new(random_number);
     let size = 4;
     let ship = Ship {
-        direction:&ShipDirection::Horizontal,
+        direction: &ShipDirection::Horizontal,
         size,
-        start_point:Point { row: 3, column: 5 }
+        start_point: Point { row: 3, column: 5 },
     };
+    let result = field.draw_ship_core(ship);
+    let sum = point_sum(field, Status::Ship);
+    assert_eq!(sum, size);
+    assert_eq!(result, Some(()));
+}
+#[test]
+fn draw_ship_core_performance() {
+    let mut field = super::GameField::new(random_number);
+    let size = 4;
+    let ship = Ship {
+        direction: &ShipDirection::Horizontal,
+        size,
+        start_point: Point { row: 3, column: 5 },
+    }; 
     let result = field.draw_ship_core(ship);
     let sum = point_sum(field, Status::Ship);
     assert_eq!(sum, size);
@@ -255,9 +266,9 @@ fn draw_ship_bounds() {
     let size = 4;
     let bound_quantity = 14;
     let ship = Ship {
-        direction:&ShipDirection::Horizontal,
+        direction: &ShipDirection::Horizontal,
         size,
-        start_point:Point { row: 5, column: 5 }
+        start_point: Point { row: 5, column: 5 },
     };
     field.draw_ship_bounds(ship);
     let sum = point_sum(field, Status::Bound);

@@ -1,19 +1,16 @@
-
 use crate::utils;
 use rand::{thread_rng, Rng};
-
+use rayon::prelude::*;
 use std::collections::HashMap;
-use std::thread;
-use utils::generate_all_empty_points;
-
-//use super::utils::{convert_tu_u8,status_u8};
+use std::sync::{Arc, Mutex};
+use std::thread::spawn;
+use utils::generate_all_empty_points; //use super::utils::{convert_tu_u8,status_u8};
 
 #[derive(Debug)]
 pub enum ShipDirection {
   Horizontal,
   Vertical,
 }
-
 
 pub enum Move {
   Miss(Point),
@@ -35,6 +32,19 @@ pub struct Ship {
   pub start_point: Point,
 }
 
+impl Ship {
+  pub fn getAll() -> HashMap<u8, u8> {
+    let mut ships = HashMap::new();
+    let keys: [u8; 4] = [1, 2, 3, 4];
+    let mut values = keys.iter().rev();
+
+    for &key in keys.iter() {
+      ships.insert(key, *values.next().unwrap());
+    }
+    ships
+  }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Status {
   Empty,
@@ -42,7 +52,6 @@ pub enum Status {
   Bound,
   Kill,
 }
-
 
 type RandomNumber = fn(u8, u8) -> u8;
 pub struct Draw {
@@ -79,7 +88,6 @@ impl Point {
   }
 }
 
-
 pub const LEN: u8 = 12;
 
 pub fn status_u8(status: Status) -> u8 {
@@ -89,7 +97,6 @@ pub fn status_u8(status: Status) -> u8 {
     Status::Bound => 2,
     Status::Kill => 3,
   }
-
 }
 pub fn convert_tu_u8(elem: &[Status; 12]) -> Vec<u8> {
   elem
@@ -99,7 +106,7 @@ pub fn convert_tu_u8(elem: &[Status; 12]) -> Vec<u8> {
     .collect::<Vec<u8>>()
 }
 
-pub type Field = [[Status; LEN as usize]; LEN as usize];
+pub struct Field([[Status; LEN as usize]; LEN as usize]);
 
 pub struct GameField {
   pub field: Field,
@@ -109,18 +116,11 @@ pub struct GameField {
 
 impl GameField {
   pub fn new(randomizer: RandomNumber) -> GameField {
-    let mut ships = HashMap::new();
-    let keys: [u8; 4] = [1, 2, 3, 4];
-    let mut values = keys.iter().rev();
-
-    for &key in keys.iter() {
-      ships.insert(key, *values.next().unwrap());
-    }
-    let field = [[Status::Empty; 12]; 12];
+    let Field(field) = Field([[Status::Empty; 12]; 12]);
 
     GameField {
       field,
-      ships,
+      ships:Ship::getAll(),
       randomizer,
     }
   }
@@ -150,7 +150,6 @@ impl GameField {
     allowed_points[point_index as usize]
   }
 
-
   pub fn reduce_ships(&mut self, size: u8) {
     let val = self.ships.get_mut(&size).unwrap();
     *val -= 1;
@@ -171,7 +170,7 @@ impl GameField {
     }
     temp_point
   }
-/* @todo replace arguments with Ship */
+  /* @todo replace arguments with Ship */
   pub fn create_ship(
     &mut self,
     size: u8,
@@ -197,7 +196,6 @@ impl GameField {
       None
     }
   }
-
 
   pub fn check_permission(&mut self, size: u8) -> bool {
     self.ships[&size] > 0
@@ -304,12 +302,10 @@ impl GameField {
     }
   }
 
-
   pub fn draw_cell(&mut self, point: Point, status: Status) {
     let Point { row, column } = point;
     self.field[row as usize][column as usize] = status;
   }
-
 
   pub fn show(&self) {
     let columns = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -351,4 +347,3 @@ impl GameField {
     }
   }
 }
-
