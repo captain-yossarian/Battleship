@@ -1,112 +1,12 @@
+use crate::structures;
 use crate::utils;
-use rand::{thread_rng, Rng};
-use rayon::prelude::*;
+
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use std::thread::spawn;
-use utils::generate_all_empty_points; //use super::utils::{convert_tu_u8,status_u8};
-
-#[derive(Debug)]
-pub enum ShipDirection {
-  Horizontal,
-  Vertical,
-}
-
-pub enum Move {
-  Miss(Point),
-  Kill(Point),
-}
-
-#[derive(Debug)]
-pub enum Direction {
-  Up,
-  Right,
-  Down,
-  Left,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub struct Ship {
-  pub size: u8,
-  pub direction: &'static ShipDirection,
-  pub start_point: Point,
-}
-
-impl Ship {
-  pub fn getAll() -> HashMap<u8, u8> {
-    let mut ships = HashMap::new();
-    let keys: [u8; 4] = [1, 2, 3, 4];
-    let mut values = keys.iter().rev();
-
-    for &key in keys.iter() {
-      ships.insert(key, *values.next().unwrap());
-    }
-    ships
-  }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum Status {
-  Empty,
-  Ship,
-  Bound,
-  Kill,
-}
-
-type RandomNumber = fn(u8, u8) -> u8;
-pub struct Draw {
-  pub start_point: Point,
-  pub path: Vec<(Direction, u8)>,
-  pub draw_status: Status,
-  pub allowed_status: Vec<Status>,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Point {
-  pub row: u8,
-  pub column: u8,
-}
-impl PartialEq for Point {
-  fn eq(&self, other: &Point) -> bool {
-    self.row == other.row && self.column == other.column
-  }
-}
-
-/**
- * @todo
- * convert argument [size,direction,point] to Ship structure
- */
-impl Point {
-  fn go_to(&mut self, direction: &Direction) -> &mut Self {
-    match direction {
-      Direction::Up => self.row -= 1,
-      Direction::Left => self.column -= 1,
-      Direction::Right => self.column += 1,
-      Direction::Down => self.row += 1,
-    }
-    self
-  }
-}
-
-pub const LEN: u8 = 12;
-
-pub fn status_u8(status: Status) -> u8 {
-  match status {
-    Status::Empty => 0,
-    Status::Ship => 1,
-    Status::Bound => 2,
-    Status::Kill => 3,
-  }
-}
-pub fn convert_tu_u8(elem: &[Status; 12]) -> Vec<u8> {
-  elem
-    .to_vec()
-    .into_iter()
-    .map(status_u8)
-    .collect::<Vec<u8>>()
-}
-
-pub struct Field([[Status; LEN as usize]; LEN as usize]);
+use structures::{
+  convert_to_u8, Direction, Draw, Field,Point, RandomNumber, Ship, ShipDirection,
+  Status,
+};
+use utils::generate_all_empty_points;
 
 pub struct GameField {
   pub field: Field,
@@ -116,11 +16,11 @@ pub struct GameField {
 
 impl GameField {
   pub fn new(randomizer: RandomNumber) -> GameField {
-    let Field(field) = Field([[Status::Empty; 12]; 12]);
+    let field = [[Status::Empty; 12]; 12];
 
     GameField {
       field,
-      ships:Ship::getAll(),
+      ships: Ship::get_all(),
       randomizer,
     }
   }
@@ -170,7 +70,7 @@ impl GameField {
     }
     temp_point
   }
-  /* @todo replace arguments with Ship */
+
   pub fn create_ship(
     &mut self,
     size: u8,
@@ -211,15 +111,7 @@ impl GameField {
     let Point { row, column } = point;
     self.field[row as usize][column as usize]
   }
-  pub fn player_move(&mut self, point: Point) -> Move {
-    match self.get_cell_value(point) {
-      Status::Ship => {
-        self.draw_cell(point, Status::Kill);
-        Move::Kill(point)
-      }
-      _ => Move::Miss(point),
-    }
-  }
+
   pub fn scan_for(
     &self,
     path: &[(Direction, u8)],
@@ -313,10 +205,10 @@ impl GameField {
     println!("            -------------------------------");
     for (index, elem) in self.field.iter().enumerate() {
       if index <= 9 {
-        println!("row:{}    {:?}", index, convert_tu_u8(elem));
+        println!("row:{}    {:?}", index, convert_to_u8(elem));
       }
       if index > 9 {
-        println!("row:{}   {:?}", index, convert_tu_u8(elem));
+        println!("row:{}   {:?}", index, convert_to_u8(elem));
       }
     }
   }

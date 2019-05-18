@@ -1,4 +1,4 @@
-use crate::field::{Field, Point, Status};
+use crate::structures::{Field, Point, Status};
 use rand::{thread_rng, Rng};
 
 pub fn random_number(bottom: u8, up: u8) -> u8 {

@@ -1,35 +1,22 @@
 mod field;
 mod game;
+mod mediator;
+mod player;
+mod structures;
 mod utils;
-
-use field::{GameField, Move, Point, ShipDirection};
-use rand::{thread_rng, Rng};
+use mediator::Mediator;
+use player::Player;
+use structures::{Point};
 use utils::random_number;
 
-use std::sync::{mpsc, Arc, Mutex};
-use std::thread::spawn;
-
 fn main() {
-  //use https://github.com/PistonDevelopers/piston
 
-  let mut field = GameField::new(random_number);
-  let size = 4;
-  field.create_ship(
-    size,
-    &ShipDirection::Vertical,
-    Some(Point { row: 5, column: 6 }),
-  );
-  
-    let point = Point { row: 5, column: 6 };
+  let mut mediator = Mediator::new();
+  let point = Point { row: 2, column: 3 };
+  mediator.human_move();
+  mediator.human.enemy_field.show();
+  mediator.ai.game_field.show();
 
-    let result = field.player_move(point);
-    match result {
-      Move::Kill(p) => println!("Kill {:?}", p),
-      Move::Miss(p) => println!("Miss {:?}", p),
-    }
-  
-  // field.generate_random_field(random_number);
-  field.show();
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
 use super::*;
-use field::{status_u8, Direction, Draw, Point, Ship, ShipDirection, Status};
+use structures::{status_u8, Direction, Draw, Point, Ship, ShipDirection, Status};
 
 use std::time::{Duration, SystemTime};
 use utils::{generate_all_empty_points, random_number};
