@@ -82,18 +82,4 @@ impl Point {
 
 pub const LEN: u8 = 12;
 
-pub fn status_u8(status: Status) -> u8 {
-    match status {
-        Status::Empty => 0,
-        Status::Ship => 1,
-        Status::Bound => 2,
-        Status::Kill => 3,
-    }
-}
-pub fn convert_to_u8(elem: &[Status; 12]) -> Vec<u8> {
-    elem.to_vec()
-        .into_iter()
-        .map(status_u8)
-        .collect::<Vec<u8>>()
-}
 pub type Field = [[Status; LEN as usize]; LEN as usize];

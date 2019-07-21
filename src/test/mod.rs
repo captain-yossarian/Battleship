@@ -1,7 +1,7 @@
 use super::*;
-use structures::{status_u8, Direction, Draw, Point, Ship, ShipDirection, Status};
-use field::{GameField};
+use field::GameField;
 use std::time::{Duration, SystemTime};
+use structures::{status_u8, Direction, Draw, Point, Ship, ShipDirection, Status};
 use utils::{generate_all_empty_points, random_number};
 
 #[cfg(test)]
@@ -136,14 +136,6 @@ fn generate_random_field() {
         let sum = point_sum(field, Status::Ship);
         assert_eq!(sum, ALL_SHIPS);
     }
-
-    let end = SystemTime::now();
-    let test_time = end
-        .duration_since(start)
-        .expect("SystemTime::duration_since failed");
-    let two_seconds = Duration::new(2, 0);
-    println!("Average {:?}", test_time);
-    assert_eq!(test_time < two_seconds, true);
 }
 #[test]
 fn random_point() {
@@ -253,7 +245,7 @@ fn draw_ship_core_performance() {
         direction: &ShipDirection::Horizontal,
         size,
         start_point: Point { row: 3, column: 5 },
-    }; 
+    };
     let result = field.draw_ship_core(ship);
     let sum = point_sum(field, Status::Ship);
     assert_eq!(sum, size);

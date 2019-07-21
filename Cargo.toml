@@ -12,9 +12,11 @@ path = "src/lib.rs"
 [[bin]]
 name = "battleship"
 doc = false
+path = "src/main.rs"
+
 
 [dependencies]
-rand = "0.6.5"
+rand = "0.7"
 rayon = "1.0"
 
 

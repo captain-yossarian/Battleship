@@ -31,7 +31,7 @@ fn get_point() -> Point {
     let mut input = String::new();
     let mut row = get_number();
     let mut column = get_number();
- 
+
     let point = Point { row, column };
     println!("User point {:?}", point);
     point
