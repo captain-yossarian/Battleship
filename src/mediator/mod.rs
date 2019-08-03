@@ -6,7 +6,8 @@ use std::io::Read;
 use utils::random_number;
 
 use player::Player;
-use structures::{Move, Point};
+use structures::{Move, Point, ShipDirection};
+use utils::{convert_to_u8, generate_all_empty_points};
 
 pub struct Mediator {
     pub human: Player,
@@ -44,10 +45,11 @@ impl Mediator {
             ai: Player::new(random_number),
         }
     }
+
     pub fn human_move(&mut self) {
         let mut missed = false;
         while !missed {
-            let point = get_point();
+            let point = Point {row:2, column:2}; // get_point();
             let result = self.ai.enemy_attack(point);
             self.human.player_move(&result);
             match result {
@@ -56,8 +58,20 @@ impl Mediator {
             }
         }
     }
-    pub fn ai_move(&mut self, point: Point) {        
-        let result = self.human.enemy_attack(point);
-        self.ai.player_move(&result);
+    pub fn ai_move(&mut self) {
+        let mut missed = false;
+        while !missed {
+            let random_point = self
+                .human
+                .enemy_field
+                .generate_random_point(&ShipDirection::Horizontal, 1);
+            let result = self.human.enemy_attack(random_point);
+            println!("Ai move {:?}", &result);
+            self.ai.player_move(&result);
+               match result {
+                Move::Miss(_) => missed = true,
+                _ => (),
+            }
+        }
     }
 }
