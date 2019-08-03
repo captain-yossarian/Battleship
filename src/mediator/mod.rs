@@ -2,7 +2,7 @@ use crate::player;
 use crate::structures;
 use crate::utils;
 use std::io;
-use std::io::Read;
+ use std::io::Read;
 use utils::random_number;
 
 use player::Player;
@@ -15,6 +15,7 @@ pub struct Mediator {
 
 fn get_number() -> u8 {
     let mut input_text = String::new();
+    println!("Enter point");
     io::stdin()
         .read_line(&mut input_text)
         .expect("failed to read from stdin");

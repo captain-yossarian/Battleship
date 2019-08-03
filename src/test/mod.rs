@@ -1,8 +1,8 @@
 use super::*;
 use field::GameField;
-use std::time::{Duration, SystemTime};
-use structures::{status_u8, Direction, Draw, Point, Ship, ShipDirection, Status};
-use utils::{generate_all_empty_points, random_number};
+// use std::time::{Duration, SystemTime};
+use structures::{Direction, Draw, Point, Ship, ShipDirection, Status};
+use utils::{generate_all_empty_points, random_number, status_u8};
 
 #[cfg(test)]
 
@@ -129,7 +129,6 @@ fn test_generate_all_empty_points() {
 }
 #[test]
 fn generate_random_field() {
-    let start = SystemTime::now();
     for _ in 0..2000 {
         let mut field = GameField::new(random_number);
         field.generate_random_field();
