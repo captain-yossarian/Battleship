@@ -20,7 +20,14 @@ impl GameField {
             randomizer,
         }
     }
-
+    /// Randomly generates field with all ships
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let x: Option<u32> = Some(2);
+    /// let ship = 1;
+    /// ```
     pub fn generate_random_field(&mut self) {
         let ships = self.ships.clone();
         let queue = [4, 3, 2, 1];

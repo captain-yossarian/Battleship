@@ -5,7 +5,6 @@ pub mod structures;
 pub mod player;
 pub mod mediator;
 
-extern crate rayon;
 
 
 

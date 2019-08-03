@@ -2,25 +2,28 @@ use crate::player;
 use crate::structures;
 use crate::utils;
 use std::io;
- use std::io::Read;
+use std::io::Read;
 use utils::random_number;
 
 use player::Player;
-use structures::Point;
+use structures::{Move, Point};
 
 pub struct Mediator {
     pub human: Player,
     pub ai: Player,
 }
-
-fn get_number() -> u8 {
+fn read_line() -> String {
     let mut input_text = String::new();
-    println!("Enter point");
     io::stdin()
         .read_line(&mut input_text)
         .expect("failed to read from stdin");
+    input_text
+}
 
-    let trimmed = input_text.trim();
+fn get_number(direction: &str) -> u8 {
+    println!("Enter {}", direction);
+    let line = read_line();
+    let trimmed = line.trim();
     let mut number = 0;
     match trimmed.parse::<u8>() {
         Ok(i) => number = i,
@@ -29,13 +32,10 @@ fn get_number() -> u8 {
     number
 }
 fn get_point() -> Point {
-    let mut input = String::new();
-    let mut row = get_number();
-    let mut column = get_number();
-
-    let point = Point { row, column };
-    println!("User point {:?}", point);
-    point
+    let row = get_number("row");
+    let column = get_number("column");
+    println!("User point, row: {:?}, column: {:?}", row, column);
+    Point { row, column }
 }
 impl Mediator {
     pub fn new() -> Mediator {
@@ -45,12 +45,19 @@ impl Mediator {
         }
     }
     pub fn human_move(&mut self) {
-        let point = get_point();
-        let result = self.ai.enemy_move(point);
-        self.human.player_move(result);
+        let mut missed = false;
+        while !missed {
+            let point = get_point();
+            let result = self.ai.enemy_attack(point);
+            self.human.player_move(&result);
+            match result {
+                Move::Miss(_) => missed = true,
+                _ => (),
+            }
+        }
     }
-    pub fn ai_move(&mut self, point: Point) {
-        let result = self.human.enemy_move(point);
-        self.ai.player_move(result);
+    pub fn ai_move(&mut self, point: Point) {        
+        let result = self.human.enemy_attack(point);
+        self.ai.player_move(&result);
     }
 }

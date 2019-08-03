@@ -1,11 +1,13 @@
 use super::*;
 use field::GameField;
 // use std::time::{Duration, SystemTime};
+use player;
 use structures::{Direction, Draw, Point, Ship, ShipDirection, Status};
 use utils::{generate_all_empty_points, random_number, status_u8};
-
 #[cfg(test)]
-
+//////////////////////////////////////////////////////
+///              GAME FIELD STRUCTURE              ///
+//////////////////////////////////////////////////////
 const ALL_SHIPS: u8 = 20;
 fn point_sum(field: GameField, status: Status) -> u8 {
     field.field.iter().flatten().fold(0, |acc, elem| {
@@ -273,4 +275,24 @@ fn generate_ship_bounds() {
     let bounds_path_vertical = field.generate_ship_bounds(&ShipDirection::Vertical, size);
     assert_eq!(bounds_path_horizontal.len(), 5);
     assert_eq!(bounds_path_vertical.len(), 5);
+}
+
+//////////////////////////////////////////////////////
+///                PLAYER STRUCTURE                ///
+//////////////////////////////////////////////////////
+
+#[test]
+fn create_new_player() {
+    let Player {
+        own_field,
+        enemy_field,
+    } = Player::new(random_number);
+    assert_eq!(point_sum(own_field, Status::Empty), 0);
+    assert_eq!(point_sum(enemy_field, Status::Empty), 0);
+}
+#[test]
+fn player_init() {
+    let mut player = Player::new(random_number);
+    player.init();
+    assert_eq!(point_sum(player.own_field, Status::Ship), 20);
 }
