@@ -35,7 +35,7 @@ fn get_number(direction: &str) -> u8 {
 fn get_point() -> Point {
     let row = get_number("row");
     let column = get_number("column");
-    println!("User point, row: {:?}, column: {:?}", row, column);
+    println!("User moved, row: {:?}, column: {:?}", row, column);
     Point { row, column }
 }
 impl Mediator {
@@ -62,7 +62,7 @@ impl Mediator {
         let mut missed = false;
         while !missed {
             let random_point = self
-                .human
+                .ai
                 .enemy_field
                 .generate_random_point(&ShipDirection::Horizontal, 1);
             let result = self.human.enemy_attack(random_point);

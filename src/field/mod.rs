@@ -41,7 +41,6 @@ impl GameField {
     }
     pub fn generate_random_point(&mut self, direction: &ShipDirection, size: u8) -> Point {
         let empty_points = generate_all_empty_points(self.field);
-        println!("Empty points {}", empty_points.len());
         let allowed_points = empty_points
             .iter()
             .filter(|point| match direction {

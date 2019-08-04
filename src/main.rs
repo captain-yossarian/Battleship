@@ -33,13 +33,15 @@ fn main() {
       let mut mediator = Mediator::new();
       mediator.ai.init();
       mediator.human.init();
+      let mut aiMove = 0;
       loop {
             &mediator.human_move();
             &mediator.ai_move();
-            println!("AI enemy field {:?}", all_filled(&mediator.ai.enemy_field));
-            if all_filled(&mediator.ai.enemy_field) == 3 {
+            aiMove +=1;
+            println!("AI enemy field {:?}, AI move {}", all_filled(&mediator.ai.enemy_field), aiMove);
+            if all_filled(&mediator.ai.enemy_field) == 20 {
                   mediator.ai.enemy_field.show();
-                  mediator.ai.own_field.show();
+                  mediator.human.own_field.show();
                   break;
             }
       }
