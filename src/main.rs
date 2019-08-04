@@ -24,7 +24,7 @@ fn all_filled(field: &GameField) -> usize {
       field.field
             .iter()
             .flatten()
-            .filter(|elem|status_u8(Status::Kill) == status_u8(**elem))
+            .filter(|elem| status_u8(Status::Kill) == status_u8(**elem))
             .collect::<Vec<&Status>>()
             .len()
 }
@@ -33,12 +33,10 @@ fn main() {
       let mut mediator = Mediator::new();
       mediator.ai.init();
       mediator.human.init();
-      let mut aiMove = 0;
       loop {
             &mediator.human_move();
             &mediator.ai_move();
-            aiMove +=1;
-            println!("AI enemy field {:?}, AI move {}", all_filled(&mediator.ai.enemy_field), aiMove);
+            println!("AI enemy field {:?} ", all_filled(&mediator.ai.enemy_field));
             if all_filled(&mediator.ai.enemy_field) == 20 {
                   mediator.ai.enemy_field.show();
                   mediator.human.own_field.show();
