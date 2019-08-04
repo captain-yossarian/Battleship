@@ -1,7 +1,7 @@
 use super::*;
 use field::GameField;
 // use std::time::{Duration, SystemTime};
-use player;
+use player::{Player};
 use structures::{Direction, Draw, Point, Ship, ShipDirection, Status};
 use utils::{generate_all_empty_points, random_number, status_u8};
 #[cfg(test)]

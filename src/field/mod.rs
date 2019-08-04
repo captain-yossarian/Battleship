@@ -9,6 +9,7 @@ pub struct GameField {
     pub field: Field,
     pub ships: HashMap<u8, u8>,
     pub randomizer: RandomNumber,
+    pub sunked_ships: u8,
 }
 
 impl GameField {
@@ -18,16 +19,13 @@ impl GameField {
             field,
             ships: Ship::get_all(),
             randomizer,
+            sunked_ships: 0,
         }
     }
-    /// Randomly generates field with all ships
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let x: Option<u32> = Some(2);
-    /// let ship = 1;
-    /// ```
+    pub fn sink_ship(&mut self) {
+        self.sunked_ships += 1;
+    }
+
     pub fn generate_random_field(&mut self) {
         let ships = self.ships.clone();
         let queue = [4, 3, 2, 1];

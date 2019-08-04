@@ -21,6 +21,7 @@ impl Player {
         match self.own_field.get_cell_value(point) {
             Status::Ship => {
                 self.own_field.draw_cell(point, Status::Kill);
+                self.own_field.sink_ship();
                 Move::Kill(point)
             }
             _ => Move::Miss(point),
