@@ -34,8 +34,8 @@ fn main() {
       mediator.ai.init();
       mediator.human.init();
       loop {
-            &mediator.human_move();
-            &mediator.ai_move();
+            mediator.human_move();
+            mediator.ai_move();
             println!("AI, enemy field {:?} ", all_filled(&mediator.ai.enemy_field));
             if all_filled(&mediator.ai.enemy_field) == 20 {
                   mediator.ai.enemy_field.show();
