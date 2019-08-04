@@ -1,10 +1,10 @@
 use crate::player;
 use crate::structures;
 use crate::utils;
-use std::io;
-use utils::random_number;
 use player::Player;
+use std::io;
 use structures::{Move, Point, ShipDirection};
+use utils::random_number;
 
 pub struct Mediator {
     pub human: Player,
@@ -23,9 +23,8 @@ fn parse_number(direction: &str) -> u8 {
     let line = read_line();
     let trimmed = line.trim();
     let mut number = 0;
-    match trimmed.parse::<u8>() {
-        Ok(i) => number = i,
-        Err(..) => (),
+    if let Ok(i) = trimmed.parse::<u8>() {
+        number = i
     };
     number
 }
@@ -50,9 +49,8 @@ impl Mediator {
             let point = get_point();
             let result = self.ai.enemy_attack(point);
             self.human.player_move(&result);
-            match result {
-                Move::Miss(_) => missed = true,
-                _ => (),
+            if let Move::Miss(_) = result {
+                missed = true
             }
         }
     }
@@ -66,9 +64,8 @@ impl Mediator {
             let result = self.human.enemy_attack(random_point);
             self.ai.player_move(&result);
             println!("AI moved {:?}, result: {:?}", random_point, result);
-            match result {
-                Move::Miss(_) => missed = true,
-                _ => (),
+            if let Move::Miss(_) = result {
+                missed = true
             }
         }
     }
