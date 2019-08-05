@@ -44,6 +44,7 @@ impl Mediator {
         human.init();
         Mediator { human, ai }
     }
+/// Keep human_move and ai_move DRY!!!
 
     pub fn human_move(&mut self) {
         let mut missed = false;
