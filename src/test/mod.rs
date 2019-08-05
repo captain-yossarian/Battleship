@@ -71,7 +71,7 @@ fn test_generate_all_empty_points() {
             &ShipDirection::Vertical,
             Some(Point { row: 5, column: 6 }),
         );
-        let empty_points = generate_all_empty_points(field.field);
+        let empty_points = generate_all_empty_points(&field.field);
         println!("EMpty points {}", empty_points.len());
         field.show();
         assert_eq!(empty_points.len(), 82);
@@ -84,7 +84,7 @@ fn test_generate_all_empty_points() {
             &ShipDirection::Vertical,
             Some(Point { row: 5, column: 6 }),
         );
-        let empty_points = generate_all_empty_points(field.field);
+        let empty_points = generate_all_empty_points(&field.field);
         println!("EMpty points {}", empty_points.len());
         field.show();
         assert_eq!(empty_points.len(), 91);
@@ -101,7 +101,7 @@ fn test_generate_all_empty_points() {
             &ShipDirection::Vertical,
             Some(Point { row: 2, column: 8 }),
         );
-        let empty_points = generate_all_empty_points(field.field);
+        let empty_points = generate_all_empty_points(&field.field);
         println!("EMpty points {}", empty_points.len());
         field.show();
         assert_eq!(empty_points.len(), 69);
@@ -123,7 +123,7 @@ fn test_generate_all_empty_points() {
             &ShipDirection::Vertical,
             Some(Point { row: 2, column: 5 }),
         );
-        let empty_points = generate_all_empty_points(field.field);
+        let empty_points = generate_all_empty_points(&field.field);
         println!("EMpty points {}", empty_points.len());
         field.show();
         assert_eq!(empty_points.len(), 68);

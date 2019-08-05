@@ -6,7 +6,7 @@ pub fn random_number(bottom: u8, up: u8) -> u8 {
     random.gen_range(bottom, up)
 }
 
-pub fn generate_all_empty_points(field: Field) -> Vec<Point> {
+pub fn generate_all_empty_points(field: &Field) -> Vec<Point> {
     let mut vec: Vec<Point> = Vec::new();
     field[1..11]
         .iter()
@@ -17,11 +17,10 @@ pub fn generate_all_empty_points(field: Field) -> Vec<Point> {
                 .enumerate()
                 .for_each(|(column_index, value)| {
                     if let Status::Empty = value {
-                        let point = Point {
+                        vec.push(Point {
                             row: (row_index as u8) + 1,
                             column: (column_index as u8) + 1,
-                        };
-                        vec.push(point);
+                        });
                     }
                 })
         });
