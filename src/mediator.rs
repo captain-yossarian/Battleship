@@ -11,6 +11,8 @@ pub struct Mediator {
     pub ai: Player,
 }
 fn read_line() -> String {
+    ///read_line allocates a new String every time, while okay for user input,
+    /// this could probably be better if we took a &mut String instead.
     let mut input_text = String::new();
     io::stdin()
         .read_line(&mut input_text)

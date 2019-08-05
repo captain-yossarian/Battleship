@@ -29,6 +29,8 @@ pub struct Ship {
 
 impl Ship {
     pub fn get_all() -> HashMap<u8, u8> {
+        /// @todo replace HashMap with Array
+        /// Regarding to https://users.rust-lang.org/t/rust-battleship-console-game/31028/2
         let mut ships = HashMap::new();
         let keys: [u8; 4] = [1, 2, 3, 4];
         let mut values = keys.iter().rev();
