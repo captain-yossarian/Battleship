@@ -6,6 +6,7 @@ mod utils;
 use mediator::Mediator;
 
 fn main() {
+
       let mut mediator = Mediator::new();
 
       loop {
