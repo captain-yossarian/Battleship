@@ -4,6 +4,7 @@ mod player;
 mod structures;
 mod utils;
 use mediator::Mediator;
+use utils::{ALL_SHIPS};
 
 fn main() {
 
@@ -13,11 +14,11 @@ fn main() {
             mediator.human_move();
             mediator.ai_move();
 
-            if mediator.human.own_field.sunked_ships == 20 {
+            if mediator.human.own_field.sunked_ships == ALL_SHIPS {
                   println!("AI wins!");
                   break;
             }
-            if mediator.ai.own_field.sunked_ships == 20 {
+            if mediator.ai.own_field.sunked_ships == ALL_SHIPS {
                   println!("Player wins!");
                   break;
             }

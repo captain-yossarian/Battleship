@@ -3,12 +3,11 @@ use field::GameField;
 // use std::time::{Duration, SystemTime};
 use player::{Player};
 use structures::{Direction, Draw, Point, Ship, ShipDirection, Status};
-use utils::{generate_all_empty_points, random_number, status_u8};
+use utils::{generate_all_empty_points, random_number, status_u8, ALL_SHIPS};
 #[cfg(test)]
 //////////////////////////////////////////////////////
 ///              GAME FIELD STRUCTURE              ///
 //////////////////////////////////////////////////////
-const ALL_SHIPS: u8 = 20;
 fn point_sum(field: GameField, status: Status) -> u8 {
     field.field.iter().flatten().fold(0, |acc, elem| {
         if *elem == status {

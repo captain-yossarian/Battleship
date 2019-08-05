@@ -1,6 +1,9 @@
 use crate::structures::{Field, Point, Status};
 use rand::{thread_rng, Rng};
 
+pub const ALL_SHIPS: u8 = 20;
+
+
 pub fn random_number(bottom: u8, up: u8) -> u8 {
     let mut random = thread_rng();
     random.gen_range(bottom, up)
